@@ -28,27 +28,6 @@ class _DndAppState extends State<DndApp> {
     } */
   }
 
-  /* Future<void> registerCustomSW() async {
-    try {
-      final navigator = html.window.navigator;
-      if (navigator.serviceWorker == null) {
-        debugPrint("❌ Service Worker non supporté par ce navigateur.");
-        return;
-      }
-
-      final registration = await jsu.promiseToFuture(
-        jsu.callMethod(navigator.serviceWorker!, 'register', [
-          '/DDB/firebase-messaging-sw.js',
-          jsu.jsify({'scope': '/DDB/'}),
-        ]),
-      );
-
-      debugPrint("✅ SW custom enregistré avec succès : $registration");
-    } catch (e) {
-      debugPrint("💥 Erreur SW : $e");
-    }
-  } */
-
   void _checkAuth() async {
     await Future.delayed(const Duration(milliseconds: 100));
     final user = FirebaseAuth.instance.currentUser;
