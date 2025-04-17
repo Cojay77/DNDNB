@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref("homeMessage");
-  //String _homeMessage = "Chargement";
+  
   bool isAdmin = false;
   String? userEmail;
   String? displayName;
