@@ -22,10 +22,6 @@ class _DndAppState extends State<DndApp> {
   void initState() {
     super.initState();
     _checkAuth();
-    /* FirebaseMessaging.instance.requestPermission();
-    if (kIsWeb) {
-      registerCustomSW();
-    } */
   }
 
   void _checkAuth() async {
