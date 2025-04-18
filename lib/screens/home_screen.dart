@@ -7,7 +7,7 @@ import '../services/auth_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:js' as js;
-import 'package:dndnb/helpers/notifications_debug.dart';
+// import 'package:dndnb/helpers/notifications_debug.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref("homeMessage");
-  
+
   bool isAdmin = false;
   String? userEmail;
   String? displayName;
@@ -93,7 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isAdmin) const NotificationsDebug(),
+            // Ecran de debug
+            // if (isAdmin) const NotificationsDebug(),
             Text("Bienvenue, ${displayName ?? 'utilisateur'} !"),
             const SizedBox(height: 30),
             ElevatedButton.icon(
