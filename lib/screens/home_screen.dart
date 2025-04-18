@@ -1,6 +1,7 @@
 import 'package:dndnb/models/update_banner.dart';
 import 'package:dndnb/utils/platform_utils_stub.dart';
 import 'package:dndnb/utils/pwa_utils.dart';
+import 'package:dndnb/widgets/installPromptButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
@@ -88,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -201,12 +202,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (kIsWeb && !isIOSBrowser() && !isAppInstalled()) ...[
-              ElevatedButton(
+              /* ElevatedButton(
                 onPressed: () {
                   js.context.callMethod('promptInstall');
                 },
                 child: const Text("Installer l’application"),
-              ),
+              ), */
+              const InstallPromptButton(),
             ],
             if (kIsWeb && isIOSBrowser()) ...[
               Padding(
