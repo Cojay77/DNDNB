@@ -53,7 +53,6 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                 itemBuilder: (context, index) {
                   final session = sessions[index];
                   //final isAvailable = session.availability[_userId] ?? false;
-
                   return Card(
                     margin: const EdgeInsets.symmetric(
                       vertical: 8,
@@ -138,8 +137,8 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                             );
                           },
                         ),
-                        const SizedBox(height: 12),
-                        const UpdateBanner(),
+                        //const SizedBox(height: 12),
+                        //const UpdateBanner(),
                       ],
                     ),
                   );
@@ -154,6 +153,7 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
         ),
         child: Row(
           children: [
+            const UpdateBanner(),
             Image.asset('assets/logo.png', height: 40, fit: BoxFit.contain),
             const Spacer(flex: 1),
             Text("D&D&B - release build", style: TextStyle(fontSize: 9)),
