@@ -53,7 +53,6 @@ class _DndAppState extends State<DndApp> {
           surface: Color(0xFF1E1E1E),
           onPrimary: Colors.white,
           onSecondary: Colors.white,
-          //onBackground: Colors.white,
           onSurface: Colors.white70,
         ),
         scaffoldBackgroundColor: Colors.black,
