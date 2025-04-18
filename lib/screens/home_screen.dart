@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'dart:js' as js;
+//import 'dart:js' as js;
 // import 'package:dndnb/helpers/notifications_debug.dart';
 
 class HomeScreen extends StatefulWidget {
