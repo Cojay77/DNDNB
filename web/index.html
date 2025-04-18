@@ -55,20 +55,6 @@
   <title>dnd_availability_app</title>
   <link rel="manifest" href="manifest.json">
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/DDB/firebase-messaging-sw.js', {
-        scope: '/DDB/',
-      })
-        .then((reg) => {
-          console.log('✅ SW enregistré avec scope /DDB/', reg);
-        })
-        .catch((err) => {
-          console.error('❌ Erreur SW:', err);
-        });
-    }
-  </script>
-
 </head>
 
 <script>
