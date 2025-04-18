@@ -1,4 +1,4 @@
-name: Deploy Flutter Web to GitHub Pages
+name: Deploy Flutter Web to cojay77.github.io
 
 on:
   push:
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Flutter project
         uses: actions/checkout@v3
 
       - name: Set up Flutter
@@ -23,14 +23,15 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web
+        run: flutter build web --base-href=/
 
       - name: Copy service worker to build output
         run: cp web/firebase-messaging-sw.js build/web/firebase-messaging-sw.js
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to cojay77.github.io
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          external_repository: Cojay77/cojay77.github.io
+          publish_branch: main
           publish_dir: build/web
-          publish_branch: gh-pages
+          personal_token: ${{ secrets.TARGET_REPO_TOKEN }}
