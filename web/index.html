@@ -63,20 +63,25 @@
       });
     }
   </script>
-  
+
+
+
+</head>
+
+<body>
+  <div style="color: red; font-size: 18px;" id="loading-status">Chargement en cours...</div>
   <script>
-    window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('✅ beforeinstallprompt capturé depuis JS');
-    });
-  
+    window.onerror = function (message, source, lineno, colno, error) {
+      document.getElementById('loading-status').innerText = "Erreur détectée : " + message;
+    };
+  </script>
+
+  <script>
     window.addEventListener('appinstalled', () => {
       console.log('📱 Application installée avec succès');
     });
   </script>
 
-</head>
-
-<body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
     let deferredPrompt;
@@ -92,13 +97,14 @@
           });
         }
       };
+      console.log('✅ beforeinstallprompt capturé depuis JS');
     });
 
     window.isInStandaloneMode = () =>
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
   </script>
-  
+
 </body>
 
 </html>
