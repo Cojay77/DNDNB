@@ -6,7 +6,10 @@ Future<void> registerWebToken(String userId) async {
   if (!kIsWeb) return;
 
   try {
-    final token = await FirebaseMessaging.instance.getToken();
+    final token = await FirebaseMessaging.instance.getToken(
+      vapidKey:
+          "BPnJahKmOlUPaI_adobh5Zp53Z25q02sHebm4MP5JhCnkY_eO8-1C5sQVRZuF9rTs6S7j4vgD9ydloKy4IFz_3M",
+    );
 
     if (token != null) {
       final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
