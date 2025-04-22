@@ -66,6 +66,17 @@
   }
 </script>
 
+<script>
+  window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('✅ beforeinstallprompt capturé depuis JS');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('📱 Application installée avec succès');
+  });
+</script>
+
+
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
@@ -87,11 +98,6 @@
     window.isInStandaloneMode = () =>
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
-  </script>
-  <script>
-    window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('✅ Événement beforeinstallprompt capturé !');
-    });
   </script>
   
 </body>
