@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 import 'screens/admin_screen.dart';
 import 'screens/game_sessions_screen.dart';
 import 'screens/splash_screen.dart';
+import 'package:dndnb/screens/send_notification_screen.dart';
 
 class DndApp extends StatefulWidget {
   const DndApp({super.key});
@@ -94,6 +95,7 @@ class _DndAppState extends State<DndApp> {
         '/sessions': (context) => const GameSessionsScreen(),
         '/splash': (context) => const SplashScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/admin/notif': (context) => const SendNotificationScreen(),
       },
       home:
           initialScreen ??

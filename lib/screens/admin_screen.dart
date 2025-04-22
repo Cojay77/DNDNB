@@ -15,7 +15,6 @@ class _AdminScreenState extends State<AdminScreen> {
   final FirebaseGameService _gameService = FirebaseGameService();
   final String _userId = FirebaseAuth.instance.currentUser!.uid;
   final TextEditingController titleController = TextEditingController();
-  
 
   List<GameSession> sessions = [];
   bool loading = true;
@@ -68,8 +67,11 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             TextField(
               controller: titleController,
-              decoration: InputDecoration(border: OutlineInputBorder(), labelText: 'Titre')
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Titre',
               ),
+            ),
             ElevatedButton(
               onPressed: () async {
                 final picked = await showDatePicker(
@@ -99,7 +101,11 @@ class _AdminScreenState extends State<AdminScreen> {
                       : () async {
                         final formatted = formatDate(selectedDate!);
                         final sessionTitle = titleController.text.trim();
-                        await _gameService.createSession(formatted, _userId, sessionTitle);
+                        await _gameService.createSession(
+                          formatted,
+                          _userId,
+                          sessionTitle,
+                        );
                         setState(() {
                           selectedDate = null;
                         });
@@ -126,6 +132,12 @@ class _AdminScreenState extends State<AdminScreen> {
                           );
                         },
                       ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/admin/notif');
+              },
+              child: const Text("Envoyer une notification"),
             ),
           ],
         ),
