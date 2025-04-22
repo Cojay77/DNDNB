@@ -1,5 +1,4 @@
 // import 'package:flutter/foundation.dart';
-import 'package:dndnb/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -27,12 +26,6 @@ void main() async {
       }
     } else {
       debugPrint("ℹ️ Aucun utilisateur connecté, token ignoré.");
-    }
-  });
-
-  await FirebaseMessaging.instance.getToken().then((token) {
-    if (token != null) {
-      registerWebToken(token);
     }
   });
 
