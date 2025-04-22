@@ -1,7 +1,7 @@
 {
     "name": "D&D&B",
     "short_name": "D&D&B",
-    "start_url": ".",
+    "start_url": "/",
     "display": "standalone",
     "theme_color": "#FF4500",
     "background_color": "#121212",

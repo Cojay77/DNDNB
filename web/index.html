@@ -52,30 +52,29 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png" />
 
-  <title>dnd_availability_app</title>
+  <title>DDB</title>
   <link rel="manifest" href="manifest.json">
 
-</head>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      const event = new CustomEvent("newVersionAvailable");
-      window.dispatchEvent(event);
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        const event = new CustomEvent("newVersionAvailable");
+        window.dispatchEvent(event);
+      });
+    }
+  </script>
+  
+  <script>
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('✅ beforeinstallprompt capturé depuis JS');
     });
-  }
-</script>
+  
+    window.addEventListener('appinstalled', () => {
+      console.log('📱 Application installée avec succès');
+    });
+  </script>
 
-<script>
-  window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('✅ beforeinstallprompt capturé depuis JS');
-  });
-
-  window.addEventListener('appinstalled', () => {
-    console.log('📱 Application installée avec succès');
-  });
-</script>
-
+</head>
 
 <body>
   <script src="flutter_bootstrap.js" async></script>
