@@ -6,6 +6,7 @@ class GameSession {
   String date;
   String createdBy;
   Map<String, bool> availability;
+  String status;
 
   GameSession({
     required this.id,
@@ -13,6 +14,7 @@ class GameSession {
     required this.date,
     required this.createdBy,
     required this.availability,
+    this.status = "prévue",
   });
 
   DateTime get parsedDate {
@@ -31,6 +33,7 @@ class GameSession {
       date: data['date'] ?? '',
       createdBy: data['createdBy'] ?? '',
       availability: Map<String, bool>.from(data['availability'] ?? {}),
+      status: data['status'] ?? '',
     );
   }
 

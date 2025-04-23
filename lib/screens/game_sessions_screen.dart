@@ -41,6 +41,19 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
     return session.availability.values.where((v) => v == true).length;
   }
 
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'confirmée':
+        return Colors.green;
+      case 'annulée':
+        return Colors.red;
+      case 'modifiée':
+        return Colors.orange;
+      default:
+        return const Color.fromARGB(0, 158, 158, 158);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,93 +76,118 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                       itemCount: sessions.length,
                       itemBuilder: (context, index) {
                         final session = sessions[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 16,
-                          ),
-                          child: ExpansionTile(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            tilePadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            leading: const Icon(Icons.expand_more),
-                            title: Text(
-                              "📅 ${session.date}",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                        return Stack(
+                          children: [
+                            Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  session.title,
+                              child: ExpansionTile(
+                                leading: const Icon(Icons.expand_more),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                tilePadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                title: Text(
+                                  "📅 ${session.date}",
                                   style: const TextStyle(
-                                    fontSize: 14,
-                                    fontStyle: FontStyle.italic,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "${countAvailable(session)} joueur(s) disponible(s)",
-                                  style: const TextStyle(fontSize: 13),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      session.title,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "${countAvailable(session)} joueur(s) disponible(s)",
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            trailing: Switch(
-                              value: session.availability[_userId] ?? false,
-                              onChanged:
-                                  (val) => toggleAvailability(session, val),
-                            ),
-                            children: [
-                              FutureBuilder<List<String>>(
-                                future: _gameService.getAvailablePlayerNames(
-                                  session,
+                                trailing: Switch(
+                                  value: session.availability[_userId] ?? false,
+                                  onChanged:
+                                      (val) => toggleAvailability(session, val),
                                 ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(8),
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  final players = snapshot.data ?? [];
-                                  if (players.isEmpty) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(8),
-                                      child: Text("Aucun joueur disponible"),
-                                    );
-                                  }
-
-                                  return Column(
-                                    children:
-                                        players
-                                            .map(
-                                              (username) => ListTile(
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 10,
+                                children: [
+                                  FutureBuilder<List<String>>(
+                                    future: _gameService
+                                        .getAvailablePlayerNames(session),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      final players = snapshot.data ?? [];
+                                      if (players.isEmpty) {
+                                        return const Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Text(
+                                            "Aucun joueur disponible",
+                                          ),
+                                        );
+                                      }
+                                      return Column(
+                                        children:
+                                            players
+                                                .map(
+                                                  (username) => ListTile(
+                                                    contentPadding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 10,
+                                                        ),
+                                                    dense: true,
+                                                    leading: const Icon(
+                                                      Icons.person,
                                                     ),
-                                                dense: true,
-                                                leading: const Icon(
-                                                  Icons.person,
-                                                ),
-                                                title: Text(username),
-                                              ),
-                                            )
-                                            .toList(),
-                                  );
-                                },
+                                                    title: Text(username),
+                                                  ),
+                                                )
+                                                .toList(),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Positioned(
+                              right: -8,
+                              top: 20,
+                              child: Transform.rotate(
+                                angle: 0.8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  color: _statusColor(session.status),
+                                  child: Text(
+                                    session.status.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),

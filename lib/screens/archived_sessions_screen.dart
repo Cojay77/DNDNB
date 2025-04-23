@@ -31,6 +31,19 @@ class _ArchivedSessionsScreenState extends State<ArchivedSessionsScreen> {
     });
   }
 
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'confirmée':
+        return Colors.green;
+      case 'annulée':
+        return Colors.red;
+      case 'modifiée':
+        return Colors.orange;
+      default:
+        return const Color.fromARGB(0, 158, 158, 158);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,35 +62,69 @@ class _ArchivedSessionsScreenState extends State<ArchivedSessionsScreen> {
                           .where((v) => v == true)
                           .length;
 
-                  return Card(
-                    color: Colors.grey.shade900,
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 16,
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        session.date,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  return Stack(
+                    children: [
+                      Card(
+                        color: Colors.grey.shade900,
+                        margin: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12.0,
+                            horizontal: 8.0,
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              session.date,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(
+                                  session.title,
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "$availableCount joueur(s) étaient dispo",
+                                  style: const TextStyle(color: Colors.white54),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            session.title,
-                            style: const TextStyle(color: Colors.white70),
+                      Positioned(
+                        right: -8,
+                        top: 20,
+                        child: Transform.rotate(
+                          angle: 0.8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            color: _statusColor(session.status),
+                            child: Text(
+                              session.status.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "$availableCount joueur(s) étaient dispo",
-                            style: const TextStyle(color: Colors.white54),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   );
                 },
               ),

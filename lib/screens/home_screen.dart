@@ -152,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Icon(
                       Icons.messenger,
-                      size: 40,
+                      size: 30,
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(height: 10),
