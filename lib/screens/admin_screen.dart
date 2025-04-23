@@ -51,6 +51,14 @@ class _AdminScreenState extends State<AdminScreen> {
     await loadSessions();
   }
 
+  Future<void> archiveSession(GameSession session) async {
+    await _gameService.archiveSession(session);
+    await loadSessions();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Session archivée")));
+  }
+
   String formatDate(DateTime date) {
     final formatter = DateFormat("EEEE d MMMM", "fr_FR");
     final raw = formatter.format(date);
@@ -122,12 +130,31 @@ class _AdminScreenState extends State<AdminScreen> {
                         itemCount: sessions.length,
                         itemBuilder: (context, index) {
                           final session = sessions[index];
-                          return ListTile(
-                            title: Text("📅 ${session.date}"),
-                            subtitle: Text("Titre : ${session.title}"),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => deleteSession(session.id),
+                          return Card(
+                            child: ListTile(
+                              title: Text("📅 ${session.date}"),
+                              subtitle: Text("Titre : ${session.title}"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.archive,
+                                      color: Colors.orange,
+                                    ),
+                                    tooltip: "Archiver",
+                                    onPressed: () => archiveSession(session),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
+                                    tooltip: "Supprimer",
+                                    onPressed: () => deleteSession(session.id),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },

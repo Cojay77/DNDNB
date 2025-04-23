@@ -45,105 +45,117 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Sessions de jeu")),
-      body:
-          loading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: sessions.length,
-                itemBuilder: (context, index) {
-                  final session = sessions[index];
-                  //final isAvailable = session.availability[_userId] ?? false;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 16,
-                    ),
-                    child: ExpansionTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      tilePadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      leading: const Icon(Icons.expand_more),
-                      title: Text(
-                        "📅 ${session.date}",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            session.title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontStyle: FontStyle.italic,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.pushNamed(context, '/sessions/archived');
+        },
+        label: const Text("Historique"),
+        icon: const Icon(Icons.history),
+      ),
+      body: Column(
+        children: [
+          const UpdateBanner(), // Bannière de mise à jour
+          Expanded(
+            child:
+                loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                      itemCount: sessions.length,
+                      itemBuilder: (context, index) {
+                        final session = sessions[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
+                          ),
+                          child: ExpansionTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${countAvailable(session)} joueur(s) disponible(s)",
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: session.availability[_userId] ?? false,
-                        onChanged: (val) => toggleAvailability(session, val),
-                      ),
-                      children: [
-                        FutureBuilder<List<String>>(
-                          future: _gameService.getAvailablePlayerNames(session),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: CircularProgressIndicator(),
-                              );
-                            }
+                            tilePadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            leading: const Icon(Icons.expand_more),
+                            title: Text(
+                              "📅 ${session.date}",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  session.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${countAvailable(session)} joueur(s) disponible(s)",
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                            trailing: Switch(
+                              value: session.availability[_userId] ?? false,
+                              onChanged:
+                                  (val) => toggleAvailability(session, val),
+                            ),
+                            children: [
+                              FutureBuilder<List<String>>(
+                                future: _gameService.getAvailablePlayerNames(
+                                  session,
+                                ),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
 
-                            final players = snapshot.data ?? [];
-                            if (players.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Text("Aucun joueur disponible"),
-                              );
-                            }
+                                  final players = snapshot.data ?? [];
+                                  if (players.isEmpty) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text("Aucun joueur disponible"),
+                                    );
+                                  }
 
-                            return Column(
-                              children:
-                                  players
-                                      .map(
-                                        (username) => ListTile(
-                                          contentPadding: EdgeInsets.symmetric(
-                                            vertical: 0,
-                                            horizontal: 10,
-                                          ),
-                                          dense: true,
-                                          visualDensity: VisualDensity(
-                                            horizontal: -4,
-                                            vertical: -4,
-                                          ),
-                                          leading: const Icon(Icons.person),
-                                          title: Text(username),
-                                        ),
-                                      )
-                                      .toList(),
-                            );
-                          },
-                        ),
-                        //const SizedBox(height: 12),
-                        //const UpdateBanner(),
-                      ],
+                                  return Column(
+                                    children:
+                                        players
+                                            .map(
+                                              (username) => ListTile(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                    ),
+                                                dense: true,
+                                                leading: const Icon(
+                                                  Icons.person,
+                                                ),
+                                                title: Text(username),
+                                              ),
+                                            )
+                                            .toList(),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+          ),
+        ],
+      ),
       bottomNavigationBar: Container(
         height: 60,
         padding: const EdgeInsets.all(8.0),
@@ -153,10 +165,9 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
         ),
         child: Row(
           children: [
-            const UpdateBanner(),
             Image.asset('assets/logo.png', height: 40, fit: BoxFit.contain),
-            const Spacer(flex: 1),
-            Text("D&D&B - release build", style: TextStyle(fontSize: 9)),
+            const Spacer(),
+            const Text("D&D&B - release build", style: TextStyle(fontSize: 9)),
           ],
         ),
       ),

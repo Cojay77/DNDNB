@@ -34,6 +34,33 @@ class FirebaseGameService {
     });
   }
 
+  Future<void> archiveSession(GameSession session) async {
+    final sessionRef = db.ref("sessions/${session.id}");
+    final archivedRef = db.ref("archivedSessions/${session.id}");
+
+    final snapshot = await sessionRef.get();
+    if (snapshot.exists) {
+      await archivedRef.set(snapshot.value);
+      await sessionRef.remove();
+    }
+  }
+
+  Future<List<GameSession>> fetchArchivedSessions() async {
+    final ref = db.ref("archivedSessions");
+    final snap = await ref.get();
+    if (snap.exists) {
+      final Map data = snap.value as Map;
+      return data.entries
+          .map(
+            (e) =>
+                GameSession.fromMap(e.key, Map<String, dynamic>.from(e.value)),
+          )
+          .toList();
+    } else {
+      return [];
+    }
+  }
+
   Future<void> toggleAvailability(
     String sessionId,
     String userId,
