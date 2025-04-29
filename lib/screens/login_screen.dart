@@ -34,9 +34,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final user = await _authService.login(email, password);
 
+    //Token sur Web
     if (kIsWeb && user?.uid != null) {
       var userId = user?.uid;
       registerWebToken(userId!);
+    }
+
+    //Token sur App
+    if (!kIsWeb && user != null) {
+      var userId = user.uid;
+      registerWebTokenOnApp(userId);
     }
 
     if (user != null) {
@@ -60,9 +67,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final user = await _authService.register(email, password, displayName);
 
+    //Token sur Web
     if (kIsWeb && user?.uid != null) {
       var userId = user?.uid;
       registerWebToken(userId!);
+    }
+
+    //Token sur App
+    if (!kIsWeb && user != null) {
+      var userId = user.uid;
+      registerWebTokenOnApp(userId);
     }
 
     if (user != null) {

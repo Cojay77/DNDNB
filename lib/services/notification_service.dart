@@ -22,3 +22,16 @@ Future<void> registerWebToken(String userId) async {
     debugPrint("❌ Erreur lors de l'enregistrement du token Web : $e");
   }
 }
+
+Future<void> registerWebTokenOnApp(String userId) async {
+  try {
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
+      await ref.set(token);
+      debugPrint("✅ Mobile token enregistré : $token");
+    }
+  } catch (e) {
+    debugPrint("❌ Erreur lors de l'enregistrement du token Web sur App : $e");
+  }
+}
