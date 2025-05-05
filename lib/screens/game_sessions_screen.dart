@@ -1,8 +1,11 @@
 import 'package:dndnb/models/update_banner.dart';
+import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/game_session.dart';
 import '../services/firebase_service.dart';
+import 'package:share_plus/share_plus.dart';
+import '../utils/ics_generator.dart';
 
 class GameSessionsScreen extends StatefulWidget {
   const GameSessionsScreen({super.key});
@@ -56,6 +59,8 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Sessions de jeu")),
       floatingActionButton: FloatingActionButton.extended(
@@ -122,6 +127,36 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                       (val) => toggleAvailability(session, val),
                                 ),
                                 children: [
+                                  ListTile(
+                                    title: Text(
+                                      "Ajouter au calendrier",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                    leading: Icon(
+                                      Icons.calendar_today,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    onTap: () async {
+                                      final file = await generateICSFile(
+                                        title: "Session D&D : ${session.title}",
+                                        description:
+                                            "Confirmée avec ${session.availability.length} joueurs.",
+                                        start: session.parsedDate,
+                                        end: session.parsedDate.add(
+                                          const Duration(hours: 3),
+                                        ),
+                                      );
+
+                                      await Share.shareXFiles(
+                                        [XFile(file.path)],
+                                        text:
+                                            "Ajoute cette session à ton calendrier !",
+                                      );
+                                    },
+                                  ),
                                   FutureBuilder<List<String>>(
                                     future: _gameService
                                         .getAvailablePlayerNames(session),
@@ -194,7 +229,7 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomAppBar(),
+      bottomNavigationBar: BottomBar(),
     );
   }
 }

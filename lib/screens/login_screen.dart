@@ -1,6 +1,7 @@
 import 'package:dndnb/services/notification_service.dart';
 import 'package:dndnb/utils/platform_utils_stub.dart';
 import 'package:dndnb/utils/pwa_utils.dart';
+import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
@@ -172,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomAppBar(),
+      bottomNavigationBar: BottomBar(),
     );
   }
 }

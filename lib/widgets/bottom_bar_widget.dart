@@ -36,8 +36,6 @@ class _BottomBarState extends State<BottomBar> {
       ),
       child: Row(
         children: [
-          Image.asset('assets/logo.png', height: 30, fit: BoxFit.contain),
-          const SizedBox(width: 8),
           Image.asset(
             'assets/furcula_logo.png',
             height: 40,
