@@ -78,6 +78,7 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/furcula_logo.png
 
 flutter_launcher_icons:
   android: true

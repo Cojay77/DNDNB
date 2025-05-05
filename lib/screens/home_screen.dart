@@ -1,14 +1,12 @@
 import 'package:dndnb/models/update_banner.dart';
 import 'package:dndnb/utils/platform_utils_stub.dart';
 import 'package:dndnb/utils/pwa_utils.dart';
+import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:dndnb/widgets/installPromptButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-//import 'dart:js' as js;
-// import 'package:dndnb/helpers/notifications_debug.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       });
     }
-    _loadVersion();
   }
 
   Future<String> _fetchHomeMessage() async {
@@ -62,13 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return "Pas de message";
     }
-  }
-
-  Future<void> _loadVersion() async {
-    final info = await PackageInfo.fromPlatform();
-    setState(() {
-      version = info.version;
-    });
   }
 
   @override
@@ -150,11 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.messenger,
-                      size: 30,
-                      color: theme.colorScheme.primary,
-                    ),
                     const SizedBox(height: 10),
                     FutureBuilder<String>(
                       future: _fetchHomeMessage(),
@@ -241,21 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 60,
-        padding: const EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          border: const Border(top: BorderSide(color: Colors.grey)),
-        ),
-        child: Row(
-          children: [
-            Image.asset('assets/logo.png', height: 40, fit: BoxFit.contain),
-            const Spacer(flex: 1),
-            Text("D&D&B - version $version", style: TextStyle(fontSize: 9)),
-          ],
-        ),
-      ),
+      bottomNavigationBar: BottomBar(),
     );
   }
 }

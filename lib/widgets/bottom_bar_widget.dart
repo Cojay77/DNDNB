@@ -1,30 +1,53 @@
+// bottom_bar.dart
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-class BottomAppInfoBar extends StatelessWidget {
-  final String version;
+class BottomBar extends StatefulWidget {
+  const BottomBar({super.key});
 
-  const BottomAppInfoBar({super.key, required this.version});
+  @override
+  State<BottomBar> createState() => _BottomBarState();
+}
+
+class _BottomBarState extends State<BottomBar> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = info.version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black87,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 60,
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: const Border(top: BorderSide(color: Colors.grey)),
+      ),
       child: Row(
         children: [
+          Image.asset('assets/logo.png', height: 30, fit: BoxFit.contain),
+          const SizedBox(width: 8),
           Image.asset(
-            'assets/dragon_logo.png', // Ton icône générée
-            width: 28,
-            height: 28,
+            'assets/furcula_logo.png',
+            height: 40,
+            fit: BoxFit.contain,
           ),
-          const SizedBox(width: 10),
+          const Spacer(),
           Text(
-            'D&D&B — v$version',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              fontFamily: 'UncialAntiqua', // Si tu l’as intégrée
-            ),
+            _version.isEmpty ? "D&D&B" : "D&D&B - version $_version",
+            style: const TextStyle(fontSize: 9),
+            textAlign: TextAlign.right,
           ),
         ],
       ),
