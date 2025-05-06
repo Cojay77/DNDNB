@@ -127,34 +127,36 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                       (val) => toggleAvailability(session, val),
                                 ),
                                 children: [
-                                  ListTile(
-                                    title: Text(
-                                      "Ajouter au calendrier",
-                                      style: TextStyle(
-                                        fontSize: 13,
+                                  //BOUTON MASQUÉ
+                                  if (true == false)
+                                    ListTile(
+                                      title: Text(
+                                        "Ajouter au calendrier",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      leading: Icon(
+                                        Icons.calendar_today,
                                         color: theme.colorScheme.primary,
                                       ),
+                                      onTap: () {
+                                        final content = generateICSContent(
+                                          title: session.title,
+                                          description: "Session D&D&B",
+                                          start: session.parsedDate,
+                                          end: session.parsedDate.add(
+                                            const Duration(hours: 3),
+                                          ),
+                                        );
+                                        shareICSFile(
+                                          context,
+                                          "session.ics",
+                                          content,
+                                        );
+                                      },
                                     ),
-                                    leading: Icon(
-                                      Icons.calendar_today,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    onTap: () {
-                                      final content = generateICSContent(
-                                        title: session.title,
-                                        description: "Session D&D&B",
-                                        start: session.parsedDate,
-                                        end: session.parsedDate.add(
-                                          const Duration(hours: 3),
-                                        ),
-                                      );
-                                      shareICSFile(
-                                        context,
-                                        "session.ics",
-                                        content,
-                                      );
-                                    },
-                                  ),
                                   FutureBuilder<List<String>>(
                                     future: _gameService
                                         .getAvailablePlayerNames(session),
