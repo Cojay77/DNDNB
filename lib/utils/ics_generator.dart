@@ -1,13 +1,11 @@
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
-Future<File> generateICSFile({
+String generateICSContent({
   required String title,
   required String description,
   required DateTime start,
   required DateTime end,
-}) async {
+}) {
   final buffer = StringBuffer();
 
   String formatDate(DateTime date) {
@@ -27,7 +25,5 @@ Future<File> generateICSFile({
   buffer.writeln('END:VEVENT');
   buffer.writeln('END:VCALENDAR');
 
-  final dir = await getTemporaryDirectory();
-  final file = File('${dir.path}/session_dnd.ics');
-  return file.writeAsString(buffer.toString());
+  return buffer.toString();
 }
