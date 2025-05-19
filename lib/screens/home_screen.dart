@@ -109,6 +109,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     }
   }
 
+  Color _stockColor(double stock) {
+    switch (stock) {
+      case >= 15:
+        return Colors.green;
+      case < 15 && >= 8:
+        return Colors.orange;
+      case < 8:
+        return Colors.red;
+      default:
+        return const Color.fromARGB(0, 158, 158, 158);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -313,7 +326,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                           FractionallySizedBox(
                             alignment: Alignment.centerLeft,
                             widthFactor: (stock / 50).clamp(0.0, 1.0),
-                            child: Container(height: 20, color: Colors.green),
+                            child: Container(
+                              height: 20,
+                              color: _stockColor(stock),
+                            ),
                           ),
 
                           // 🟨 Apports à venir (translucide)
