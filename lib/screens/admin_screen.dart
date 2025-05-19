@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firebase_service.dart';
@@ -20,12 +21,16 @@ class _AdminScreenState extends State<AdminScreen> {
   bool loading = true;
   DateTime? selectedDate;
 
+  double _beerStock = 1;
+  final double _maxStock = 50;
+
   final TextEditingController dateController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     loadSessions();
+    loadBeerStock();
   }
 
   Future<void> loadSessions() async {
@@ -63,6 +68,24 @@ class _AdminScreenState extends State<AdminScreen> {
     final formatter = DateFormat("EEEE d MMMM", "fr_FR");
     final raw = formatter.format(date);
     return raw[0].toUpperCase() + raw.substring(1);
+  }
+
+  Future<void> loadBeerStock() async {
+    final snapshot = await FirebaseDatabase.instance.ref('beerStock').get();
+    if (snapshot.exists) {
+      setState(() {
+        _beerStock = (snapshot.child('value').value ?? 60) as double;
+      });
+    }
+  }
+
+  Future<void> _updateBeerStock(double value) async {
+    await FirebaseDatabase.instance.ref('beerStock').set({
+      'value': value,
+      'max': _maxStock,
+      'lastUpdateBy': FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
+    });
+    setState(() => _beerStock = value);
   }
 
   @override
@@ -165,6 +188,17 @@ class _AdminScreenState extends State<AdminScreen> {
                 Navigator.pushNamed(context, '/admin/notif');
               },
               child: const Text("Envoyer une notification"),
+            ),
+            const SizedBox(height: 20),
+            Text("🧃 Réserve de bières (${_beerStock.toInt()} / $_maxStock)"),
+            Slider(
+              value: _beerStock,
+              min: 0,
+              max: _maxStock,
+              divisions: 50,
+              label: "${_beerStock.toInt()}",
+              onChanged: (value) => setState(() => _beerStock = value),
+              onChangeEnd: _updateBeerStock,
             ),
           ],
         ),

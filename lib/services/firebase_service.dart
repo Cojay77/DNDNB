@@ -50,12 +50,17 @@ class FirebaseGameService {
     final snap = await ref.get();
     if (snap.exists) {
       final Map data = snap.value as Map;
-      return data.entries
-          .map(
-            (e) =>
-                GameSession.fromMap(e.key, Map<String, dynamic>.from(e.value)),
-          )
-          .toList();
+      var sessions =
+          data.entries
+              .map(
+                (e) => GameSession.fromMap(
+                  e.key,
+                  Map<String, dynamic>.from(e.value),
+                ),
+              )
+              .toList();
+      sessions.sort((a, b) => b.parsedDate.compareTo(a.parsedDate));
+      return sessions;
     } else {
       return [];
     }
@@ -70,8 +75,18 @@ class FirebaseGameService {
     await ref.set(available);
   }
 
+  Future<String> getUserName(String userId) async {
+    final ref = db.ref("users/$userId/displayName");
+    final snap = await ref.get();
+
+    if (snap.exists) {
+      return snap.value as String;
+    } else {
+      return "utilisateur inconnu";
+    }
+  }
+
   Future<List<String>> getAvailablePlayerNames(GameSession session) async {
-    final db = FirebaseDatabase.instance;
     final userRef = db.ref("users");
 
     List<String> displayNames = [];
@@ -92,5 +107,46 @@ class FirebaseGameService {
     }
 
     return displayNames;
+  }
+
+  Future<void> setBeerContribution(
+    String sessionId,
+    String userId,
+    int amount,
+  ) async {
+    await db.ref("sessions/$sessionId/beerContributions/$userId").set(amount);
+  }
+
+  Future<Map<String, int>> getBeerContributions(GameSession session) async {
+    final ref = db.ref("sessions/${session.id}/beerContributions");
+    final snap = await ref.get();
+    if (snap.exists) {
+      return Map<String, int>.from(snap.value as Map<dynamic, dynamic>);
+    } else {
+      return {};
+    }
+  }
+
+  Future<int> fetchUpcomingBeerContributions() async {
+    final ref = db.ref("sessions");
+    final snapshot = await ref.get();
+
+    if (snapshot.exists) {
+      final sessions =
+          (snapshot.value as Map).entries.map((e) {
+            return GameSession.fromMap(
+              e.key,
+              Map<String, dynamic>.from(e.value),
+            );
+          }).toList();
+
+      if (sessions.isEmpty) return 0;
+
+      sessions.sort((a, b) => a.parsedDate.compareTo(b.parsedDate));
+      final nextSession = sessions.first;
+
+      return nextSession.beerContributions.values.fold<int>(0, (a, b) => a + b);
+    }
+    return 0;
   }
 }

@@ -127,6 +127,57 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                       (val) => toggleAvailability(session, val),
                                 ),
                                 children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.local_drink),
+                                      const SizedBox(width: 8),
+                                      const Text("J’apporte :"),
+                                      const SizedBox(width: 8),
+                                      SizedBox(
+                                        width: 50,
+                                        child: TextFormField(
+                                          initialValue:
+                                              session.beerContributions[_userId]
+                                                  ?.toString() ??
+                                              '',
+                                          keyboardType: TextInputType.number,
+                                          onFieldSubmitted: (value) async {
+                                            final quantity =
+                                                int.tryParse(value) ?? 0;
+                                            if (quantity < 0) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "❌ Le nombre de bières ne peut pas être négatif.",
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            await _gameService
+                                                .setBeerContribution(
+                                                  session.id,
+                                                  _userId,
+                                                  quantity,
+                                                );
+                                            await loadSessions();
+                                          },
+                                          decoration: const InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            isDense: true,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 6,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
                                   //BOUTON MASQUÉ
                                   if (true == false)
                                     ListTile(
@@ -194,6 +245,46 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                                   ),
                                                 )
                                                 .toList(),
+                                      );
+                                    },
+                                  ),
+                                  FutureBuilder<Map<String, int>>(
+                                    future: _gameService.getBeerContributions(
+                                      session,
+                                    ),
+                                    builder: (context, snapshot) {
+                                      if (!snapshot.hasData) {
+                                        return const SizedBox.shrink();
+                                      }
+
+                                      final contributions = snapshot.data!;
+                                      if (contributions.isEmpty) {
+                                        return const Text(
+                                          "Personne n’a indiqué apporter des bières.",
+                                        );
+                                      }
+
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("🍻 Contributions :"),
+                                          ...contributions.entries.map(
+                                            (entry) => FutureBuilder<String>(
+                                              future: _gameService.getUserName(
+                                                entry.key,
+                                              ),
+                                              builder: (context, nameSnap) {
+                                                if (!nameSnap.hasData) {
+                                                  return const SizedBox.shrink();
+                                                }
+                                                return Text(
+                                                  "${nameSnap.data} : + ${entry.value} 🍺",
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   ),

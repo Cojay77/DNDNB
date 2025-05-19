@@ -7,6 +7,7 @@ class GameSession {
   String createdBy;
   Map<String, bool> availability;
   String status;
+  Map<String, int> beerContributions;
 
   GameSession({
     required this.id,
@@ -15,6 +16,7 @@ class GameSession {
     required this.createdBy,
     required this.availability,
     this.status = "prévue",
+    required this.beerContributions,
   });
 
   DateTime get parsedDate {
@@ -34,6 +36,7 @@ class GameSession {
       createdBy: data['createdBy'] ?? '',
       availability: Map<String, bool>.from(data['availability'] ?? {}),
       status: data['status'] ?? '',
+      beerContributions: Map<String, int>.from(data['beerContributions'] ?? {}),
     );
   }
 

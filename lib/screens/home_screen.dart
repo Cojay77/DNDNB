@@ -6,6 +6,8 @@ import 'package:dndnb/widgets/installPromptButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/firebase_service.dart';
+import '../main.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,9 +17,12 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final AuthService _authService = AuthService();
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref("homeMessage");
+
+  final _beerRef = FirebaseDatabase.instance.ref('beerStock/value');
+  final FirebaseGameService _gameService = FirebaseGameService();
 
   bool isAdmin = false;
   String? userEmail;
@@ -25,10 +30,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String? version;
   String? buildNumber;
 
+  Future<String>? _homeMessageFuture;
+  Future<String>? _releaseNoteFuture;
+
   @override
   void initState() {
     super.initState();
-    //_fetchHomeMessage();
+
+    _homeMessageFuture = _fetchHomeMessage();
+    _releaseNoteFuture = _fetchReleaseNote();
+
     final user = _authService.currentUser;
     userEmail = user?.email;
     displayName = user?.displayName;
@@ -39,6 +50,26 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       });
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _gameService.fetchUpcomingBeerContributions();
   }
 
   Future<String> _fetchHomeMessage() async {
@@ -142,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: 10),
                     FutureBuilder<String>(
-                      future: _fetchHomeMessage(),
+                      future: _homeMessageFuture,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -166,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 10),
                     FutureBuilder<String>(
-                      future: _fetchReleaseNote(),
+                      future: _releaseNoteFuture,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -216,6 +247,100 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
+            FutureBuilder(
+              future: Future.wait([
+                _beerRef.get(), // stock actuel
+                _gameService
+                    .fetchUpcomingBeerContributions(), // contributions prévues
+              ]),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data == null) {
+                  return const CircularProgressIndicator();
+                }
+
+                final stockSnapshot = snapshot.data![0] as DataSnapshot;
+                final stock = (stockSnapshot.value as num?)?.toDouble() ?? 0.0;
+                final contributions = snapshot.data![1] as int;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        //const Icon(Icons.local_drink, color: Colors.amber),
+                        const SizedBox(width: 8),
+                        Text(
+                          "🍻 Réserve + Apports",
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Stack(
+                        children: [
+                          // 🔴 Fond gris
+                          Container(
+                            height: 20,
+                            width: double.infinity,
+                            color: Colors.grey.shade800,
+                          ),
+
+                          // 🟩 Stock actuel (plein)
+                          FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: (stock / 50).clamp(0.0, 1.0),
+                            child: Container(height: 20, color: Colors.green),
+                          ),
+
+                          // 🟨 Apports à venir (translucide)
+                          FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: ((stock + contributions) / 50).clamp(
+                              0.0,
+                              1.0,
+                            ),
+                            child: Container(
+                              height: 20,
+                              color: Colors.green.withOpacity(0.3),
+                            ),
+                          ),
+
+                          // 📊 Optionnel : texte au-dessus
+                          Center(
+                            child: Text(
+                              "${(stock + contributions).clamp(0, 50).toInt()} bières",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+                    Text(
+                      "Stock actuel : ${stock.toInt()}  |  Apports prévus : $contributions",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
             const UpdateBanner(),
           ],
         ),

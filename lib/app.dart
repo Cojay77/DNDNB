@@ -11,7 +11,8 @@ import 'package:dndnb/screens/send_notification_screen.dart';
 import 'package:dndnb/screens/archived_sessions_screen.dart';
 
 class DndApp extends StatefulWidget {
-  const DndApp({super.key});
+  final RouteObserver<PageRoute> routeObserver;
+  const DndApp({super.key, required this.routeObserver});
 
   @override
   State<DndApp> createState() => _DndAppState();
@@ -38,6 +39,7 @@ class _DndAppState extends State<DndApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'D&D&B',
+      navigatorObservers: [widget.routeObserver],
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         primarySwatch: Colors.deepOrange,

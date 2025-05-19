@@ -22,9 +22,6 @@ class _ArchivedSessionsScreenState extends State<ArchivedSessionsScreen> {
 
   Future<void> _loadArchivedSessions() async {
     final sessions = await _firebaseService.fetchArchivedSessions();
-    sessions.sort(
-      (a, b) => b.parsedDate.compareTo(a.parsedDate),
-    ); // tri du plus récent au plus ancien
     setState(() {
       _archivedSessions = sessions;
       _loading = false;

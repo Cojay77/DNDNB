@@ -3,7 +3,7 @@
     "short_name": "D&D&B",
     "start_url": "/",
     "display": "standalone",
-    "theme_color": "#FF4500",
+    "theme_color": "#121212",
     "background_color": "#121212",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",
