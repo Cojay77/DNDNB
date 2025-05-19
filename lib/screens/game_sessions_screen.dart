@@ -258,7 +258,12 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                       }
 
                                       final contributions = snapshot.data!;
-                                      if (contributions.isEmpty) {
+                                      if (contributions.isEmpty ||
+                                          contributions.values.fold(
+                                                0,
+                                                (p, c) => p + c,
+                                              ) <
+                                              1) {
                                         return const Text(
                                           "Personne n’a indiqué apporter des bières.",
                                         );
@@ -275,7 +280,8 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                                 entry.key,
                                               ),
                                               builder: (context, nameSnap) {
-                                                if (!nameSnap.hasData) {
+                                                if (!nameSnap.hasData ||
+                                                    entry.value < 1) {
                                                   return const SizedBox.shrink();
                                                 }
                                                 return Text(
