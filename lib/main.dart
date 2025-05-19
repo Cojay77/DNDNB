@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'app.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeDateFormatting('fr_FR', null);
 
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
     debugPrint("🔁 Nouveau token Web : $newToken");

@@ -60,6 +60,7 @@ class FirebaseGameService {
               )
               .toList();
       sessions.sort((a, b) => b.parsedDate.compareTo(a.parsedDate));
+
       return sessions;
     } else {
       return [];

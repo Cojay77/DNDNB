@@ -65,7 +65,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   String formatDate(DateTime date) {
-    final formatter = DateFormat("EEEE d MMMM", "fr_FR");
+    final formatter = DateFormat("EEEE d MMMM yyyy", "fr_FR");
     final raw = formatter.format(date);
     return raw[0].toUpperCase() + raw.substring(1);
   }

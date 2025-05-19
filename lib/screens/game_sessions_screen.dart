@@ -98,7 +98,7 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                   vertical: 12,
                                 ),
                                 title: Text(
-                                  "📅 ${session.date}",
+                                  "📅 ${session.date.substring(0, session.date.length - 5)}",
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,

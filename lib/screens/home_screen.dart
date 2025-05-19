@@ -3,6 +3,8 @@ import 'package:dndnb/utils/platform_utils_stub.dart';
 import 'package:dndnb/utils/pwa_utils.dart';
 import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:dndnb/widgets/installPromptButton.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
@@ -50,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         });
       });
     }
+    _refreshTokenManually();
   }
 
   @override
@@ -89,6 +92,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       return snap.value.toString().replaceAll("\\n", "\n");
     } else {
       return "Pas de message";
+    }
+  }
+
+  void _refreshTokenManually() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final token = await FirebaseMessaging.instance.getToken();
+    final ref = FirebaseDatabase.instance.ref('webTokens/${user.uid}');
+    final snapshot = await ref.get();
+
+    if (snapshot.value != token) {
+      await ref.set(token);
+      debugPrint("Token mis à jour manuellement : $token");
     }
   }
 

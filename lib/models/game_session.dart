@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class GameSession {
@@ -21,9 +22,11 @@ class GameSession {
 
   DateTime get parsedDate {
     try {
-      final format = DateFormat("d/M/yyyy");
-      return format.parse(date);
-    } catch (_) {
+      final cleaned = date.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+      final format = DateFormat("EEEE d MMMM yyyy", "fr_FR");
+      return format.parse(cleaned);
+    } catch (e) {
+      debugPrint("⚠️ Erreur de parsing pour la date \"$date\": $e");
       return DateTime(2100);
     }
   }
