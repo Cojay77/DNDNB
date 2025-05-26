@@ -21,3 +21,24 @@ messaging.onBackgroundMessage((payload) => {
     icon: '/DDB/icons/Icon-192.png'
   });
 });
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(function(clientList) {
+      // Si une fenêtre est déjà ouverte, on la focus
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url.includes('/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Sinon, on en ouvre une nouvelle
+      if (clients.openWindow) {
+        return clients.openWindow('/'); 
+      }
+    })
+  );
+});
+

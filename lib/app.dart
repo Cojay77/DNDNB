@@ -52,8 +52,7 @@ class _DndAppState extends State<DndApp> {
         useMaterial3: true,
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFFFF4500), // feu
-          secondary: Color(0xFF8B0000), // rouge sombre
-          background: Colors.black,
+          secondary: Color(0xFF8B0000),
           surface: Color(0xFF1E1E1E),
           onPrimary: Colors.white,
           onSecondary: Colors.white,
