@@ -17,6 +17,7 @@ class GameSessionsScreen extends StatefulWidget {
 class _GameSessionsScreenState extends State<GameSessionsScreen> {
   final FirebaseGameService _gameService = FirebaseGameService();
   final String _userId = FirebaseAuth.instance.currentUser!.uid;
+  final TextEditingController beerController = TextEditingController();
 
   List<GameSession> sessions = [];
   bool loading = true;
@@ -129,51 +130,48 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.local_drink),
-                                      const SizedBox(width: 8),
-                                      const Text("J’apporte :"),
-                                      const SizedBox(width: 8),
-                                      SizedBox(
-                                        width: 50,
-                                        child: TextFormField(
-                                          initialValue:
-                                              session.beerContributions[_userId]
-                                                  ?.toString() ??
-                                              '',
+                                      Expanded(
+                                        child: TextField(
+                                          controller: beerController,
                                           keyboardType: TextInputType.number,
-                                          onFieldSubmitted: (value) async {
-                                            final quantity =
-                                                int.tryParse(value) ?? 0;
-                                            if (quantity < 0) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    "❌ Le nombre de bières ne peut pas être négatif.",
-                                                  ),
-                                                ),
-                                              );
-                                              return;
-                                            }
-                                            await _gameService
-                                                .setBeerContribution(
-                                                  session.id,
-                                                  _userId,
-                                                  quantity,
-                                                );
-                                            await loadSessions();
-                                          },
                                           decoration: const InputDecoration(
+                                            labelText: "🍺 Apport",
                                             border: OutlineInputBorder(),
-                                            isDense: true,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 6,
-                                                ),
                                           ),
                                         ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final input =
+                                              beerController.text.trim();
+                                          final apport = int.tryParse(input);
+
+                                          if (apport == null || apport < 0) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "❌ Nombre invalide",
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          await _gameService
+                                              .setBeerContribution(
+                                                session.id,
+                                                _userId,
+                                                apport,
+                                              );
+
+                                          await loadSessions();
+                                          beerController.clear();
+                                        },
+                                        icon: const Icon(Icons.check),
+                                        label: const Text("OK"),
                                       ),
                                     ],
                                   ),
