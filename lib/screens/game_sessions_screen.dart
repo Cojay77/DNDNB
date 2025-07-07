@@ -82,6 +82,7 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                       itemCount: sessions.length,
                       itemBuilder: (context, index) {
                         final session = sessions[index];
+                        final currentValue = session.availability[_userId];
                         return Stack(
                           children: [
                             Card(
@@ -122,10 +123,27 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                     ),
                                   ],
                                 ),
-                                trailing: Switch(
-                                  value: session.availability[_userId] ?? false,
+                                trailing: DropdownButton<bool?>(
+                                  value: currentValue,
+                                  icon: const Icon(Icons.arrow_drop_down),
+                                  underline: Container(),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: true,
+                                      child: Text("Présent"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: false,
+                                      child: Text("Absent"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: null,
+                                      child: Text("Non répondu"),
+                                    ),
+                                  ],
                                   onChanged:
-                                      (val) => toggleAvailability(session, val),
+                                      (value) =>
+                                          toggleAvailability(session, value!),
                                 ),
                                 children: [
                                   Row(
@@ -206,9 +224,10 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                         );
                                       },
                                     ),
-                                  FutureBuilder<List<String>>(
-                                    future: _gameService
-                                        .getAvailablePlayerNames(session),
+                                  FutureBuilder<Map<String, bool?>>(
+                                    future: _gameService.getAllAvailability(
+                                      session,
+                                    ),
                                     builder: (context, snapshot) {
                                       if (snapshot.connectionState ==
                                           ConnectionState.waiting) {
@@ -217,32 +236,135 @@ class _GameSessionsScreenState extends State<GameSessionsScreen> {
                                           child: CircularProgressIndicator(),
                                         );
                                       }
-                                      final players = snapshot.data ?? [];
-                                      if (players.isEmpty) {
-                                        return const Padding(
-                                          padding: EdgeInsets.all(8),
-                                          child: Text(
-                                            "Aucun joueur disponible",
-                                          ),
-                                        );
-                                      }
-                                      return Column(
-                                        children:
-                                            players
-                                                .map(
-                                                  (username) => ListTile(
-                                                    contentPadding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 10,
-                                                        ),
-                                                    dense: true,
-                                                    leading: const Icon(
-                                                      Icons.person,
-                                                    ),
-                                                    title: Text(username),
+
+                                      final availabilityMap =
+                                          snapshot.data ?? {};
+
+                                      // On crée une Future<List<MapEntry<String, String>>> où chaque entrée contient le pseudo et le statut
+                                      return FutureBuilder<
+                                        List<MapEntry<String, bool?>>
+                                      >(
+                                        future: Future.wait(
+                                          availabilityMap.entries.map((
+                                            entry,
+                                          ) async {
+                                            final username = await _gameService
+                                                .getUsernameById(entry.key);
+                                            return MapEntry(
+                                              username,
+                                              entry.value,
+                                            );
+                                          }),
+                                        ),
+                                        builder: (context, userSnapshot) {
+                                          if (userSnapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const Padding(
+                                              padding: EdgeInsets.all(8),
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+
+                                          final entries =
+                                              userSnapshot.data ?? [];
+                                          final present =
+                                              entries
+                                                  .where((e) => e.value == true)
+                                                  .map((e) => e.key)
+                                                  .toList();
+                                          final absent =
+                                              entries
+                                                  .where(
+                                                    (e) => e.value == false,
+                                                  )
+                                                  .map((e) => e.key)
+                                                  .toList();
+                                          final unknown =
+                                              entries
+                                                  .where((e) => e.value == null)
+                                                  .map((e) => e.key)
+                                                  .toList();
+
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              if (present.isNotEmpty) ...[
+                                                const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8,
                                                   ),
-                                                )
-                                                .toList(),
+                                                  child: Text(
+                                                    "✅ Présents",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ...present.map(
+                                                  (name) => ListTile(
+                                                    leading: const Icon(
+                                                      Icons.check_circle,
+                                                      color: Colors.green,
+                                                    ),
+                                                    title: Text(name),
+                                                  ),
+                                                ),
+                                              ],
+                                              if (absent.isNotEmpty) ...[
+                                                const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8,
+                                                  ),
+                                                  child: Text(
+                                                    "❌ Absents",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ...absent.map(
+                                                  (name) => ListTile(
+                                                    leading: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
+                                                    ),
+                                                    title: Text(name),
+                                                  ),
+                                                ),
+                                              ],
+                                              if (unknown.isNotEmpty) ...[
+                                                const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8,
+                                                  ),
+                                                  child: Text(
+                                                    "❓ Sans réponse",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ...unknown.map(
+                                                  (name) => ListTile(
+                                                    leading: const Icon(
+                                                      Icons.help_outline,
+                                                      color: Colors.grey,
+                                                    ),
+                                                    title: Text(name),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          );
+                                        },
                                       );
                                     },
                                   ),

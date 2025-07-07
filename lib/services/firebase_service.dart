@@ -110,6 +110,19 @@ class FirebaseGameService {
     return displayNames;
   }
 
+  Future<Map<String, bool?>> getAllAvailability(GameSession session) async {
+    return session.availability; // ou récupéré depuis Firebase si besoin
+  }
+
+  Future<String> getUsernameById(String userId) async {
+    final snapshot =
+        await FirebaseDatabase.instance.ref("users/$userId/displayName").get();
+    if (snapshot.exists) {
+      return snapshot.value.toString();
+    }
+    return "Utilisateur inconnu";
+  }
+
   Future<void> setBeerContribution(
     String sessionId,
     String userId,
