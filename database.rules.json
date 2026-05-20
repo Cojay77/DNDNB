@@ -1,0 +1,59 @@
+{
+  "rules": {
+    "sessions": {
+      ".read": "auth != null",
+      "$sessionId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        "availability": {
+          "$userId": {
+            ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+          }
+        },
+        "beerContributions": {
+          "$userId": {
+            ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+          }
+        },
+        "notes": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+        },
+        "status": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+        }
+      }
+    },
+    "archivedSessions": {
+      ".read": "auth != null",
+      "$sessionId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+        ".write": "auth != null && auth.uid === $uid",
+        "isAdmin": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+        }
+      }
+    },
+    "beerStock": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "homeMessage": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "webTokens": {
+      "$uid": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

@@ -23,7 +23,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --base-href=/
+        run: flutter build web --base-href=/ --dart-define=VAPID_KEY=${{ secrets.VAPID_KEY }}
 
       - name: Copy service worker to build output
         run: cp web/firebase-messaging-sw.js build/web/firebase-messaging-sw.js

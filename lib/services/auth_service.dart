@@ -98,13 +98,12 @@ class AuthService {
       String? token;
 
       if (kIsWeb) {
-        token = await FirebaseMessaging.instance.getToken(
-          vapidKey: const String.fromEnvironment(
-            'VAPID_KEY',
-            defaultValue:
-                "BPnJahKmOlUPaI_adobh5Zp53Z25q02sHebm4MP5JhCnkY_eO8-1C5sQVRZuF9rTs6S7j4vgD9ydloKy4IFz_3M",
-          ),
-        );
+        // VAPID_KEY must be injected at build time via:
+        //   flutter build web --dart-define=VAPID_KEY=<your_key>
+        // If missing, getToken() will throw and be caught below.
+        const vapidKey = String.fromEnvironment('VAPID_KEY');
+        assert(vapidKey.isNotEmpty, 'VAPID_KEY must be set at build time');
+        token = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
       } else {
         token = await FirebaseMessaging.instance.getToken();
       }
