@@ -1,13 +1,13 @@
-import 'package:dndnb/widgets/update_banner.dart';
-import 'package:dndnb/utils/platform_utils.dart';
-import 'package:dndnb/widgets/bottom_bar_widget.dart';
-import 'package:dndnb/widgets/install_prompt_button.dart';
 import 'package:dndnb/widgets/beer_stock_gauge.dart';
 import 'package:dndnb/widgets/next_session_card.dart';
+import 'package:dndnb/widgets/update_banner.dart';
+import 'package:dndnb/utils/platform_utils.dart';
+import 'package:dndnb/utils/theme.dart';
+import 'package:dndnb/widgets/bottom_bar_widget.dart';
+import 'package:dndnb/widgets/install_prompt_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
 import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../main.dart';
@@ -21,29 +21,21 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final AuthService _authService = AuthService();
-
   String? displayName;
 
   @override
   void initState() {
     super.initState();
-
     final user = _authService.currentUser;
     displayName = user?.displayName;
-
-    // Register/refresh token on app open
-    if (user != null) {
-      _authService.refreshTokenIfNeeded(user.uid);
-    }
+    if (user != null) _authService.refreshTokenIfNeeded(user.uid);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route is PageRoute) {
-      routeObserver.subscribe(this, route);
-    }
+    if (route is PageRoute) routeObserver.subscribe(this, route);
   }
 
   @override
@@ -54,20 +46,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isAdmin = ref.watch(isAdminProvider);
     final homeMessage = ref.watch(homeMessageStreamProvider);
     final releaseNote = ref.watch(releaseNoteStreamProvider);
-    final beerStock = ref.watch(beerStockStreamProvider);
-    final upcomingContributions = ref.watch(upcomingBeerContributionsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Accueil"),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: "Se déconnecter",
             onPressed: () async {
               await _authService.logout();
               if (context.mounted) {
@@ -78,185 +67,199 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(DndSpacing.md),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text("Bienvenue, ${displayName ?? 'utilisateur'} !",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 24),
-            
-            // Hero Next Session Card acts as the CTA
-            InkWell(
-              onTap: () => Navigator.pushNamed(context, '/sessions'),
-              borderRadius: BorderRadius.circular(16),
-              child: const NextSessionCard(),
+            // Welcome
+            Text(
+              "Bienvenue, ${displayName ?? 'aventurier'} !",
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DndSpacing.md),
+
+            // Next session hero card
+            const NextSessionCard(),
+            const SizedBox(height: DndSpacing.lg),
+
+            // Navigation buttons
+            _NavButton(
+              icon: Icons.casino,
+              label: "Voir les sessions",
+              onTap: () => Navigator.pushNamed(context, '/sessions'),
+            ),
+            const SizedBox(height: DndSpacing.sm),
             isAdmin.when(
               data: (admin) => admin
-                  ? ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/admin');
-                      },
-                      icon: const Icon(Icons.shield),
-                      label: const Text("Espace Admin"),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                  ? _NavButton(
+                      icon: Icons.shield,
+                      label: "Espace Admin",
+                      onTap: () => Navigator.pushNamed(context, '/admin'),
                     )
                   : const SizedBox.shrink(),
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/profile');
-              },
-              icon: const Icon(Icons.person),
-              label: const Text("Mettre à jour le profil"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            const SizedBox(height: DndSpacing.sm),
+            _NavButton(
+              icon: Icons.person,
+              label: "Mon profil",
+              onTap: () => Navigator.pushNamed(context, '/profile'),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: DndSpacing.lg),
 
-            // Home message card — now realtime
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    homeMessage.when(
-                      data: (msg) => Text(
-                        msg,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      loading: () => Shimmer.fromColors(
-                        baseColor: Colors.grey.shade800,
-                        highlightColor: Colors.grey.shade700,
-                        child: Container(
-                          height: 20,
-                          width: 200,
-                          color: Colors.white,
-                        ),
-                      ),
-                      error: (e, _) => Text(
-                        "Erreur de chargement",
-                        style: TextStyle(color: Colors.red.shade300),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Icon(
-                      Icons.new_releases,
-                      size: 30,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 10),
-                    releaseNote.when(
-                      data: (note) => note.isEmpty
-                          ? const SizedBox.shrink()
-                          : Text(
-                              note,
-                              textAlign: TextAlign.left,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                      loading: () => Shimmer.fromColors(
-                        baseColor: Colors.grey.shade800,
-                        highlightColor: Colors.grey.shade700,
-                        child: Container(
-                          height: 20,
-                          width: 200,
-                          color: Colors.white,
-                        ),
-                      ),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-              ),
+            // Message du MJ card
+            _HomeMessageCard(
+              homeMessage: homeMessage,
+              releaseNote: releaseNote,
             ),
+            const SizedBox(height: DndSpacing.lg),
 
-            // PWA install prompts
+            // Beer stock gauge (self-contained, reads its own providers)
+            const BeerStockGauge(),
+            const SizedBox(height: DndSpacing.lg),
+
+            // PWA install prompts (web only)
             if (kIsWeb && !isIOSBrowser() && !isAppInstalled()) ...[
               const InstallPromptButton(),
+              const SizedBox(height: DndSpacing.sm),
             ],
             if (kIsWeb && isIOSBrowser()) ...[
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(Icons.ios_share, color: Colors.white, size: 28),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pour installer l'application :\nAppuyez sur "
-                          "le bouton de partage (en bas de l'écran), "
-                          "puis \"Ajouter à l'écran d'accueil\".",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const _IosInstallBanner(),
+              const SizedBox(height: DndSpacing.sm),
             ],
 
-            // Beer stock gauge — now realtime
-            beerStock.when(
-              data: (stock) {
-                final contributions = upcomingContributions.valueOrNull ?? 0;
-                return BeerStockGauge(
-                  stock: stock,
-                  contributions: contributions,
-                );
-              },
-              loading: () => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Shimmer.fromColors(
-                  baseColor: Colors.grey.shade800,
-                  highlightColor: Colors.grey.shade700,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(height: 20, width: 150, color: Colors.white),
-                      const SizedBox(height: 8),
-                      Container(height: 20, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
-                    ],
-                  ),
-                ),
-              ),
-              error: (e, _) => Text(
-                "Erreur chargement stock",
-                style: TextStyle(color: Colors.red.shade300),
-              ),
-            ),
-
+            // Update notice
             const UpdateBanner(),
           ],
         ),
       ),
       bottomNavigationBar: BottomBar(),
+    );
+  }
+}
+
+// ─── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 50),
+      ),
+    );
+  }
+}
+
+class _HomeMessageCard extends StatelessWidget {
+  final AsyncValue<String> homeMessage;
+  final AsyncValue<String> releaseNote;
+
+  const _HomeMessageCard({
+    required this.homeMessage,
+    required this.releaseNote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(DndSpacing.md),
+        child: Column(
+          children: [
+            Icon(
+              Icons.auto_stories,
+              size: 28,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: DndSpacing.sm),
+            homeMessage.when(
+              data: (msg) => Text(
+                msg,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge,
+              ),
+              loading: () => const CircularProgressIndicator(strokeWidth: 2),
+              error: (_, __) => Text(
+                "Impossible de charger le message.",
+                style: TextStyle(color: Colors.red.shade300, fontSize: 13),
+              ),
+            ),
+            releaseNote.when(
+              data: (note) => note.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      children: [
+                        const Divider(height: DndSpacing.lg),
+                        Row(
+                          children: [
+                            Icon(Icons.new_releases,
+                                size: 18,
+                                color: theme.colorScheme.primary),
+                            const SizedBox(width: DndSpacing.sm),
+                            Text(
+                              "Nouveautés",
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: DndSpacing.sm),
+                        Text(note,
+                            style: theme.textTheme.bodyMedium),
+                      ],
+                    ),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IosInstallBanner extends StatelessWidget {
+  const _IosInstallBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: DndColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: DndColors.fire.withValues(alpha: 0.3)),
+      ),
+      padding: const EdgeInsets.all(DndSpacing.md),
+      child: const Row(
+        children: [
+          Icon(Icons.ios_share, color: Colors.white70, size: 26),
+          SizedBox(width: DndSpacing.md),
+          Expanded(
+            child: Text(
+              "Pour installer l'app sur iOS :\nAppuyez sur le bouton partage ↑ puis \"Ajouter à l'écran d'accueil\".",
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

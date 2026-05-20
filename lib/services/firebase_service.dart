@@ -175,14 +175,10 @@ class FirebaseGameService {
   Future<void> toggleAvailability(
     String sessionId,
     String userId,
-    bool? available,
+    bool available,
   ) async {
     final ref = db.ref("sessions/$sessionId/availability/$userId");
-    if (available == null) {
-      await ref.remove();
-    } else {
-      await ref.set(available);
-    }
+    await ref.set(available);
   }
 
   Future<String> getUserName(String userId) async {
@@ -243,5 +239,10 @@ class FirebaseGameService {
 
   Future<void> updateSessionStatus(String sessionId, String status) async {
     await db.ref("sessions/$sessionId/status").set(status);
+  }
+
+  /// Saves MJ notes for a session (visible to all, written by admin only)
+  Future<void> saveSessionNotes(String sessionId, String notes) async {
+    await db.ref("sessions/$sessionId/notes").set(notes);
   }
 }

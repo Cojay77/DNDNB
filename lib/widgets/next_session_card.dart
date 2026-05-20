@@ -1,206 +1,292 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firebase_service.dart';
+import '../utils/date_utils.dart' as date_utils;
 import '../utils/theme.dart';
+import 'session_card.dart';
 
+/// Hero card displayed on the home screen showing the next upcoming session.
+/// Shows the date, title, player count, the current user's availability status,
+/// and a quick-action button to go to sessions.
 class NextSessionCard extends ConsumerWidget {
   const NextSessionCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(sessionsStreamProvider);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return sessionsAsync.when(
+      loading: () => const _NextSessionSkeleton(),
+      error: (_, __) => const SizedBox.shrink(),
       data: (sessions) {
-        if (sessions.isEmpty) {
-          return _buildEmptyState(context);
-        }
+        if (sessions.isEmpty) return const _NoSessionCard();
 
-        // The stream provider already sorts by date, so the first is the next upcoming
-        final nextSession = sessions.first;
-        final availableCount =
-            nextSession.availability.values.where((v) => v == true).length;
+        // First session is the earliest upcoming (already sorted in service)
+        final next = sessions.first;
+        final availability = next.availability[userId];
+        final playerCount = countAvailablePlayers(next);
+        final statusColor = sessionStatusColor(next.status);
 
-        return _buildHeroCard(context, nextSession.title,
-            nextSession.displayDate, availableCount, nextSession.status);
-      },
-      loading: () => _buildShimmer(),
-      error: (_, __) => _buildErrorState(context),
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context, String title, String date,
-      int participants, String status) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primary.withValues(alpha: 0.8),
-            AppTheme.secondary.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background icon
-          Positioned(
-            right: -20,
-            bottom: -20,
-            child: Icon(
-              Icons.casino,
-              size: 120,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // Gradient header
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      DndColors.fire,
+                      DndColors.blood,
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  DndSpacing.md,
+                  DndSpacing.md + 6,
+                  DndSpacing.md,
+                  DndSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Prochaine Session",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        fontFamily: 'Inter', // Try modern font if available
-                      ),
-                    ),
-                    if (AppTheme.getStatusColor(status) !=
-                        AppTheme.statusDefault)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getStatusColor(status),
-                          borderRadius: BorderRadius.circular(8),
+                    // Label + status
+                    Row(
+                      children: [
+                        Text(
+                          "⚔️  Prochaine session",
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: DndColors.amber),
                         ),
-                        child: Text(
-                          status.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        const Spacer(),
+                        if (statusColor != Colors.transparent)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: statusColor.withValues(alpha: 0.6)),
+                            ),
+                            child: Text(
+                              next.status.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: DndSpacing.sm),
+
+                    // Date
+                    Text(
+                      next.date,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+
+                    // Countdown chip
+                    Builder(builder: (_) {
+                      final countdown =
+                          date_utils.sessionCountdown(next.date);
+                      if (countdown.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: DndSpacing.xs),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: DndColors.fire.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: DndColors.fire
+                                    .withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            countdown,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: DndColors.fire,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
+                      );
+                    }),
+
+                    // Title
+                    if (next.title.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        next.title,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  date,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'UncialAntiqua',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.group, color: Colors.white70, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      "$participants joueur(s) confirmés",
-                      style: const TextStyle(color: Colors.white),
+                    ],
+                    const SizedBox(height: DndSpacing.md),
+
+                    // Stats row
+                    Row(
+                      children: [
+                        _StatChip(
+                          icon: Icons.people,
+                          label: "$playerCount présent${playerCount > 1 ? 's' : ''}",
+                          color: playerCount > 0
+                              ? DndColors.beerGreen
+                              : DndColors.onSurfaceMuted,
+                        ),
+                        const SizedBox(width: DndSpacing.sm),
+                        _StatChip(
+                          icon: _availabilityIcon(availability),
+                          label: _availabilityLabel(availability),
+                          color: _availabilityColor(availability),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    const Icon(Icons.chevron_right, color: Colors.white70),
+                    const SizedBox(height: DndSpacing.md),
+
+                    // CTA button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/sessions'),
+                        icon: const Icon(Icons.casino, size: 18),
+                        label: const Text("Voir toutes les sessions"),
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  IconData _availabilityIcon(bool? availability) {
+    if (availability == true) return Icons.check_circle;
+    if (availability == false) return Icons.cancel;
+    return Icons.help_outline;
+  }
+
+  String _availabilityLabel(bool? availability) {
+    if (availability == true) return "Je suis présent";
+    if (availability == false) return "Je suis absent";
+    return "Pas encore répondu";
+  }
+
+  Color _availabilityColor(bool? availability) {
+    if (availability == true) return DndColors.beerGreen;
+    if (availability == false) return DndColors.beerRed;
+    return DndColors.onSurfaceMuted;
+  }
+}
+
+// ─── Chip ─────────────────────────────────────────────────────────────────────
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Column(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.event_busy, size: 48, color: Colors.white24),
-          const SizedBox(height: 16),
-          const Text(
-            "Aucune session prévue",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Demandez à l'admin d'en créer une !",
-            style: TextStyle(color: Colors.white54, fontSize: 13),
-          ),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12, color: color, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildErrorState(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.shade900),
-      ),
-      child: const Center(
-        child: Text(
-          "Erreur de chargement",
-          style: TextStyle(color: Colors.red),
+// ─── Skeleton + empty states ──────────────────────────────────────────────────
+
+class _NextSessionSkeleton extends StatelessWidget {
+  const _NextSessionSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(DndSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _shimmer(120, 12),
+            const SizedBox(height: DndSpacing.sm),
+            _shimmer(200, 20),
+            const SizedBox(height: DndSpacing.sm),
+            _shimmer(150, 14),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildShimmer() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade800,
-      highlightColor: Colors.grey.shade700,
-      child: Container(
-        width: double.infinity,
-        height: 160,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade900,
-          borderRadius: BorderRadius.circular(16),
+  Widget _shimmer(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
+}
+
+class _NoSessionCard extends StatelessWidget {
+  const _NoSessionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(DndSpacing.lg),
+        child: Column(
+          children: [
+            Icon(Icons.event_busy, size: 40, color: Colors.grey.shade600),
+            const SizedBox(height: DndSpacing.sm),
+            Text(
+              "Aucune session à venir.",
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
+            ),
+          ],
         ),
       ),
     );

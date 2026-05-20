@@ -1,4 +1,4 @@
-// bottom_bar.dart
+import 'package:dndnb/utils/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -20,32 +20,43 @@ class _BottomBarState extends State<BottomBar> {
 
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
-    setState(() {
-      _version = info.version;
-    });
+    if (mounted) setState(() => _version = info.version);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.all(8.0),
+      height: 52,
       decoration: BoxDecoration(
         color: Colors.black,
-        border: const Border(top: BorderSide(color: Colors.grey)),
+        // Fire gradient top border
+        border: Border(
+          top: BorderSide(
+            color: DndColors.fire.withValues(alpha: 0.45),
+            width: 1.5,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DndSpacing.md,
+        vertical: DndSpacing.xs,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Image.asset(
             'assets/furcula_logo.png',
-            height: 40,
+            height: 34,
             fit: BoxFit.contain,
           ),
           const Spacer(),
           Text(
-            _version.isEmpty ? "D&D&B" : "D&D&B - version $_version",
-            style: const TextStyle(fontSize: 9),
-            textAlign: TextAlign.right,
+            _version.isEmpty ? "D&D&B" : "v$_version",
+            style: const TextStyle(
+              fontSize: 10,
+              color: DndColors.onSurfaceMuted,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),

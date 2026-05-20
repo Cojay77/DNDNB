@@ -9,6 +9,8 @@ class GameSession {
   Map<String, bool> availability;
   String status;
   Map<String, int> beerContributions;
+  /// MJ notes — visible to all players, editable only by admins
+  String notes;
 
   GameSession({
     required this.id,
@@ -18,47 +20,17 @@ class GameSession {
     required this.availability,
     this.status = "prévue",
     required this.beerContributions,
+    this.notes = '',
   });
 
   DateTime get parsedDate {
     try {
-      // First try standard ISO 8601 parsing (the new format)
-      return DateTime.parse(date);
-    } catch (_) {
-      // Fallback for old French string format if any data is left over
-      try {
-        final cleaned = date.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
-        final format = DateFormat("EEEE d MMMM yyyy", "fr_FR");
-        return format.parse(cleaned);
-      } catch (e) {
-        debugPrint("⚠️ Erreur de parsing absolue pour la date \"$date\": $e");
-        return DateTime(2100);
-      }
-    }
-  }
-
-  String get displayDate {
-    try {
-      final dt = parsedDate;
-      if (dt.year == 2100) return date; // fallback to raw string if parsing failed
-      
-      final formatter = DateFormat("EEEE d MMMM yyyy", "fr_FR");
-      final raw = formatter.format(dt);
-      return raw[0].toUpperCase() + raw.substring(1);
-    } catch (_) {
-      return date;
-    }
-  }
-
-  String get shortDisplayDate {
-    try {
-      final dt = parsedDate;
-      if (dt.year == 2100) return date;
-      
-      final formatter = DateFormat("d MMM yyyy", "fr_FR");
-      return formatter.format(dt);
-    } catch (_) {
-      return date;
+      final cleaned = date.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+      final format = DateFormat("EEEE d MMMM yyyy", "fr_FR");
+      return format.parse(cleaned);
+    } catch (e) {
+      debugPrint("⚠️ Erreur de parsing pour la date \"$date\": $e");
+      return DateTime(2100);
     }
   }
 
@@ -70,7 +42,9 @@ class GameSession {
       createdBy: data['createdBy'] ?? '',
       availability: Map<String, bool>.from(data['availability'] ?? {}),
       status: data['status'] ?? 'prévue',
-      beerContributions: Map<String, int>.from(data['beerContributions'] ?? {}),
+      beerContributions:
+          Map<String, int>.from(data['beerContributions'] ?? {}),
+      notes: data['notes']?.toString() ?? '',
     );
   }
 
@@ -82,6 +56,7 @@ class GameSession {
       'availability': availability,
       'status': status,
       'beerContributions': beerContributions,
+      'notes': notes,
     };
   }
 }

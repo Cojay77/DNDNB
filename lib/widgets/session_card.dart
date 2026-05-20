@@ -1,205 +1,368 @@
+import 'package:dndnb/utils/date_utils.dart' as date_utils;
+import 'package:dndnb/utils/ics_generator.dart';
+import 'package:dndnb/utils/share_ics.dart';
+import 'package:dndnb/utils/theme.dart';
+import 'package:dndnb/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/game_session.dart';
 import '../services/firebase_service.dart';
-import 'status_badge.dart';
 
-class SessionCard extends StatelessWidget {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+Color sessionStatusColor(String status) {
+  switch (status.toLowerCase()) {
+    case 'confirmée':
+      return Colors.green;
+    case 'annulée':
+      return Colors.red;
+    case 'modifiée':
+      return Colors.orange;
+    default:
+      return Colors.transparent;
+  }
+}
+
+int countAvailablePlayers(GameSession session) =>
+    session.availability.values.where((v) => v == true).length;
+
+// ─── SessionCard ──────────────────────────────────────────────────────────────
+
+/// A card showing a single session with availability toggle, beer input,
+/// ICS export, availability list, and beer contributions list.
+class SessionCard extends ConsumerStatefulWidget {
   final GameSession session;
   final String userId;
-  final TextEditingController beerController;
-  final FirebaseGameService gameService;
-  final UsernameCacheNotifier usernameCache;
-  final ThemeData theme;
+  /// When true, an edit button for MJ notes is shown
+  final bool isAdmin;
 
   const SessionCard({
     super.key,
     required this.session,
     required this.userId,
-    required this.beerController,
-    required this.gameService,
-    required this.usernameCache,
-    required this.theme,
+    this.isAdmin = false,
   });
 
-  int countAvailable(GameSession session) {
-    return session.availability.values.where((v) => v == true).length;
+  @override
+  ConsumerState<SessionCard> createState() => _SessionCardState();
+}
+
+class _SessionCardState extends ConsumerState<SessionCard> {
+  final TextEditingController _beerController = TextEditingController();
+
+  @override
+  void dispose() {
+    _beerController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _exportIcs() async {
+    final session = widget.session;
+    final dt = date_utils.parseSessionDate(session.date);
+    if (dt == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Impossible de lire la date de la session.")),
+        );
+      }
+      return;
+    }
+    final title = session.title.isNotEmpty
+        ? "D&D&B — ${session.title}"
+        : "D&D&B — Session";
+
+    final ics = generateICSContent(
+      title: title,
+      description: "Session D&D — ${session.date}",
+      start: dt,
+      end: dt.add(const Duration(hours: 4)),
+    );
+
+    final fileName =
+        "session_${dt.year}${dt.month.toString().padLeft(2, '0')}${dt.day.toString().padLeft(2, '0')}.ics";
+
+    if (mounted) await shareICSFile(context, fileName, ics);
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentValue = session.availability[userId];
+    final session = widget.session;
+    final userId = widget.userId;
+    final gameService = ref.read(gameServiceProvider);
+    final usernameCache = ref.read(usernameCacheProvider.notifier);
+    final currentAvailability = session.availability[userId];
+    final playerCount = countAvailablePlayers(session);
+    final countdown = date_utils.sessionCountdown(session.date);
 
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Card(
           margin: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
+              horizontal: DndSpacing.md, vertical: 10),
           child: ExpansionTile(
-            leading: const Icon(Icons.expand_more),
+            leading: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.calendar_month_outlined),
+                if (session.notes.isNotEmpty)
+                  Positioned(
+                    right: -3,
+                    top: -3,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: DndColors.amber,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: DndColors.card, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: currentValue == null
-                  ? BorderSide(color: theme.colorScheme.primary, width: 2)
-                  : BorderSide.none,
-            ),
-            collapsedShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: currentValue == null
-                  ? BorderSide(color: theme.colorScheme.primary, width: 2)
-                  : BorderSide.none,
             ),
             tilePadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+                horizontal: DndSpacing.md, vertical: 10),
             title: Text(
-              "📅 ${session.displayDate}",
+              _shortDate(session.date),
               style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  session.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
+                if (session.title.isNotEmpty)
+                  Text(
+                    session.title,
+                    style: const TextStyle(
+                        fontSize: 13, fontStyle: FontStyle.italic),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _AttendingAvatarRow(
-                  session: session,
-                  usernameCache: usernameCache,
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildResponseButton(
-                  context,
-                  icon: Icons.check_circle,
-                  color: Colors.green,
-                  isSelected: currentValue == true,
-                  onTap: () => gameService.toggleAvailability(session.id, userId, true),
-                ),
-                _buildResponseButton(
-                  context,
-                  icon: Icons.cancel,
-                  color: Colors.red,
-                  isSelected: currentValue == false,
-                  onTap: () => gameService.toggleAvailability(session.id, userId, false),
-                ),
-                _buildResponseButton(
-                  context,
-                  icon: Icons.help,
-                  color: Colors.grey,
-                  isSelected: currentValue == null,
-                  onTap: () => gameService.toggleAvailability(session.id, userId, null),
-                ),
-              ],
-            ),
-            children: [
-              // Beer contribution input
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                child: Row(
+                const SizedBox(height: 4),
+                Row(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: beerController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "🍺 Apport",
-                          border: OutlineInputBorder(),
+                    Flexible(
+                      child: Text(
+                        "$playerCount joueur${playerCount > 1 ? 's' : ''} dispo",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: playerCount > 0
+                              ? Colors.green.shade300
+                              : Colors.grey,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final input = beerController.text.trim();
-                        final apport = int.tryParse(input);
-
-                        if (apport == null || apport < 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("❌ Nombre invalide"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        await gameService.setBeerContribution(
-                          session.id,
-                          userId,
-                          apport,
-                        );
-                        beerController.clear();
-                      },
-                      icon: const Icon(Icons.check),
-                      label: const Text("OK"),
-                    ),
+                    if (countdown.isNotEmpty) ...[
+                      const SizedBox(width: DndSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: DndColors.fire.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color:
+                                  DndColors.fire.withValues(alpha: 0.35)),
+                        ),
+                        child: Text(
+                          countdown,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: DndColors.fire,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
+              ],
+            ),
+            trailing: _AvailabilityDropdown(
+              value: currentAvailability,
+              onChanged: (value) async {
+                if (value == null) return;
+                await gameService.toggleAvailability(
+                    session.id, userId, value);
+              },
+            ),
+            children: [
+              const Divider(height: 1, indent: 16, endIndent: 16),
 
-              // Availability list
+              // ICS export action row
+              _IcsExportRow(onExport: _exportIcs),
+
+              _BeerInputRow(
+                controller: _beerController,
+                onConfirm: () async {
+                  final amount =
+                      int.tryParse(_beerController.text.trim());
+                  if (amount == null || amount < 0) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Nombre invalide")),
+                      );
+                    }
+                    return;
+                  }
+                  await gameService.setBeerContribution(
+                      session.id, userId, amount);
+                  _beerController.clear();
+                },
+              ),
               AvailabilityList(
                 session: session,
                 usernameCache: usernameCache,
               ),
-
-              // Beer contributions list
               BeerContributionsList(
                 session: session,
                 gameService: gameService,
               ),
+              // MJ Notes
+              if (session.notes.isNotEmpty || widget.isAdmin)
+                _NotesSection(
+                  session: session,
+                  gameService: gameService,
+                  isAdmin: widget.isAdmin,
+                ),
+              const SizedBox(height: DndSpacing.sm),
             ],
           ),
         ),
 
-        // Status badge
-        StatusBadge(status: session.status),
+        // Status ribbon badge — now uses StatusBadge widget
+        Positioned(
+          right: DndSpacing.sm,
+          top: 0,
+          child: StatusBadge(status: session.status),
+        ),
       ],
     );
   }
 
-  Widget _buildResponseButton(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? color : Colors.transparent,
-            width: 2,
+  String _shortDate(String date) {
+    if (date.length > 5) {
+      return date.substring(0, date.length - 5);
+    }
+    return date;
+  }
+}
+
+// ─── ICS Export Row ───────────────────────────────────────────────────────────
+
+class _IcsExportRow extends StatelessWidget {
+  final VoidCallback onExport;
+  const _IcsExportRow({required this.onExport});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          DndSpacing.md, DndSpacing.sm, DndSpacing.md, 0),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today,
+              size: 14, color: DndColors.onSurfaceMuted),
+          const SizedBox(width: DndSpacing.sm),
+          Text(
+            "Ajouter au calendrier",
+            style: TextStyle(
+                fontSize: 12, color: DndColors.onSurfaceMuted),
           ),
-        ),
-        child: Icon(
-          icon,
-          color: isSelected ? color : Colors.grey.shade600,
-          size: 24,
-        ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: onExport,
+            icon: const Icon(Icons.download, size: 16),
+            label: const Text("Exporter .ics"),
+            style: TextButton.styleFrom(
+              foregroundColor: DndColors.ember,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: DndSpacing.sm, vertical: DndSpacing.xs),
+              textStyle: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// ─── AvailabilityDropdown ─────────────────────────────────────────────────────
+
+class _AvailabilityDropdown extends StatelessWidget {
+  final bool? value;
+  final ValueChanged<bool?> onChanged;
+
+  const _AvailabilityDropdown({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<bool?>(
+      value: value,
+      icon: const Icon(Icons.arrow_drop_down),
+      underline: const SizedBox.shrink(),
+      isDense: true,
+      items: const [
+        DropdownMenuItem(value: true, child: Text("✅ Présent")),
+        DropdownMenuItem(value: false, child: Text("❌ Absent")),
+        DropdownMenuItem(value: null, child: Text("❓ Non répondu")),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+// ─── BeerInputRow ─────────────────────────────────────────────────────────────
+
+class _BeerInputRow extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onConfirm;
+
+  const _BeerInputRow({required this.controller, required this.onConfirm});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          DndSpacing.md, DndSpacing.md, DndSpacing.md, DndSpacing.xs),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => onConfirm(),
+              decoration: const InputDecoration(
+                labelText: "Mon apport en bières",
+                prefixIcon: Icon(Icons.sports_bar_outlined, size: 18),
+                isDense: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: DndSpacing.sm),
+          ElevatedButton.icon(
+            onPressed: onConfirm,
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text("OK"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: DndSpacing.sm, vertical: DndSpacing.md),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── AvailabilityList ─────────────────────────────────────────────────────────
 
 class AvailabilityList extends StatefulWidget {
   final GameSession session;
@@ -216,36 +379,35 @@ class AvailabilityList extends StatefulWidget {
 }
 
 class _AvailabilityListState extends State<AvailabilityList> {
-  List<MapEntry<String, bool?>> _resolvedEntries = [];
+  List<MapEntry<String, bool?>> _resolved = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _resolveUsernames();
+    _resolve();
   }
 
   @override
   void didUpdateWidget(covariant AvailabilityList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Re-resolve if session data changed
     if (oldWidget.session.availability != widget.session.availability) {
-      _resolveUsernames();
+      _resolve();
     }
   }
 
-  Future<void> _resolveUsernames() async {
+  Future<void> _resolve() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
     final entries = await Future.wait(
-      widget.session.availability.entries.map((entry) async {
-        final username =
-            await widget.usernameCache.getUsername(entry.key);
-        return MapEntry(username, entry.value as bool?);
+      widget.session.availability.entries.map((e) async {
+        final name = await widget.usernameCache.getUsername(e.key);
+        return MapEntry(name, e.value as bool?);
       }),
     );
-
     if (mounted) {
       setState(() {
-        _resolvedEntries = entries;
+        _resolved = entries;
         _loading = false;
       });
     }
@@ -255,70 +417,66 @@ class _AvailabilityListState extends State<AvailabilityList> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Padding(
-        padding: EdgeInsets.all(8),
-        child: CircularProgressIndicator(),
+        padding: EdgeInsets.all(DndSpacing.md),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 
     final present =
-        _resolvedEntries.where((e) => e.value == true).map((e) => e.key).toList();
+        _resolved.where((e) => e.value == true).map((e) => e.key).toList();
     final absent =
-        _resolvedEntries.where((e) => e.value == false).map((e) => e.key).toList();
+        _resolved.where((e) => e.value == false).map((e) => e.key).toList();
     final unknown =
-        _resolvedEntries.where((e) => e.value == null).map((e) => e.key).toList();
+        _resolved.where((e) => e.value == null).map((e) => e.key).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (present.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              "✅ Présents",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ...present.map(
-            (name) => ListTile(
-              leading: const Icon(Icons.check_circle, color: Colors.green),
-              title: Text(name),
-            ),
-          ),
+    if (present.isEmpty && absent.isEmpty && unknown.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(DndSpacing.md),
+        child: Text("Aucune réponse encore."),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DndSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ..._section("Présents", present, Icons.check_circle,
+              Colors.green.shade400),
+          ..._section("Absents", absent, Icons.cancel, Colors.red.shade400),
+          ..._section("Sans réponse", unknown, Icons.help_outline,
+              Colors.grey),
         ],
-        if (absent.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              "❌ Absents",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ...absent.map(
-            (name) => ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.red),
-              title: Text(name),
-            ),
-          ),
-        ],
-        if (unknown.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              "❓ Sans réponse",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ...unknown.map(
-            (name) => ListTile(
-              leading: const Icon(Icons.help_outline, color: Colors.grey),
-              title: Text(name),
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
+
+  List<Widget> _section(
+      String label, List<String> names, IconData icon, Color color) {
+    if (names.isEmpty) return [];
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+            DndSpacing.sm, DndSpacing.md, DndSpacing.sm, DndSpacing.xs),
+        child: Text(
+          label,
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: color, fontSize: 12),
+        ),
+      ),
+      ...names.map(
+        (name) => ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(icon, color: color, size: 18),
+          title: Text(name, style: const TextStyle(fontSize: 14)),
+        ),
+      ),
+    ];
+  }
 }
+
+// ─── BeerContributionsList ────────────────────────────────────────────────────
 
 class BeerContributionsList extends StatelessWidget {
   final GameSession session;
@@ -332,143 +490,235 @@ class BeerContributionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, int>>(
-      future: gameService.getBeerContributions(session),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
+    final contributions = session.beerContributions;
+    final total = contributions.values.fold(0, (a, b) => a + b);
 
-        final contributions = snapshot.data!;
-        if (contributions.isEmpty ||
-            contributions.values.fold(0, (p, c) => p + c) < 1) {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text("Personne n'a indiqué apporter des bières."),
-          );
-        }
+    if (total < 1) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(
+            DndSpacing.md, DndSpacing.sm, DndSpacing.md, DndSpacing.xs),
+        child: Text(
+          "Personne n'a indiqué apporter des bières.",
+          style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
+        ),
+      );
+    }
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("🍻 Contributions :"),
-              ...contributions.entries.map(
-                (entry) => FutureBuilder<String>(
-                  future: gameService.getUserName(entry.key),
-                  builder: (context, nameSnap) {
-                    if (!nameSnap.hasData || entry.value < 1) {
-                      return const SizedBox.shrink();
-                    }
-                    return Text(
-                      "${nameSnap.data} : + ${entry.value} 🍺",
-                    );
-                  },
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          DndSpacing.md, DndSpacing.sm, DndSpacing.md, DndSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Apports prévus — $total bière${total > 1 ? 's' : ''} :",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
-        );
-      },
+          const SizedBox(height: DndSpacing.xs),
+          ...contributions.entries
+              .where((e) => e.value > 0)
+              .map((entry) => FutureBuilder<String>(
+                    future: gameService.getUserName(entry.key),
+                    builder: (context, snap) {
+                      if (!snap.hasData) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.sports_bar,
+                                size: 14, color: DndColors.amber),
+                            const SizedBox(width: DndSpacing.xs),
+                            Text(
+                              "${snap.data}  +${entry.value}",
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )),
+        ],
+      ),
     );
   }
 }
 
-class _AttendingAvatarRow extends StatefulWidget {
-  final GameSession session;
-  final UsernameCacheNotifier usernameCache;
+// ─── NotesSection ─────────────────────────────────────────────────────────────
 
-  const _AttendingAvatarRow({
+/// Displays MJ notes for a session.
+/// Players see a read-only callout box.
+/// Admins additionally see an edit button that opens an inline editor.
+class _NotesSection extends StatefulWidget {
+  final GameSession session;
+  final FirebaseGameService gameService;
+  final bool isAdmin;
+
+  const _NotesSection({
     required this.session,
-    required this.usernameCache,
+    required this.gameService,
+    required this.isAdmin,
   });
 
   @override
-  State<_AttendingAvatarRow> createState() => _AttendingAvatarRowState();
+  State<_NotesSection> createState() => _NotesSectionState();
 }
 
-class _AttendingAvatarRowState extends State<_AttendingAvatarRow> {
-  List<String> _presentNames = [];
-  bool _loading = true;
+class _NotesSectionState extends State<_NotesSection> {
+  bool _editing = false;
+  bool _saving = false;
+  late final TextEditingController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _resolvePresentUsernames();
+    _ctrl = TextEditingController(text: widget.session.notes);
   }
 
   @override
-  void didUpdateWidget(covariant _AttendingAvatarRow oldWidget) {
+  void didUpdateWidget(covariant _NotesSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.session.availability != widget.session.availability) {
-      _resolvePresentUsernames();
+    // Sync if notes changed externally (stream update) and not editing
+    if (!_editing && oldWidget.session.notes != widget.session.notes) {
+      _ctrl.text = widget.session.notes;
     }
   }
 
-  Future<void> _resolvePresentUsernames() async {
-    final presentUserIds = widget.session.availability.entries
-        .where((e) => e.value == true)
-        .map((e) => e.key)
-        .toList();
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
-    final names = await Future.wait(
-        presentUserIds.map((id) => widget.usernameCache.getUsername(id)),
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    await widget.gameService.saveSessionNotes(
+      widget.session.id,
+      _ctrl.text.trim(),
     );
-
     if (mounted) {
       setState(() {
-        _presentNames = names;
-        _loading = false;
+        _saving = false;
+        _editing = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const SizedBox(
-        height: 24,
-        child: Text("Chargement des joueurs...", style: TextStyle(fontSize: 12, color: Colors.grey)),
-      );
-    }
+    final hasNotes = widget.session.notes.isNotEmpty;
 
-    if (_presentNames.isEmpty) {
-      return const Text("Aucun joueur confirmé pour l'instant", style: TextStyle(fontSize: 12, color: Colors.grey));
-    }
-
-    final displayNames = _presentNames.take(5).toList();
-    final overflow = _presentNames.length - 5;
-
-    return Row(
-      children: [
-        ...displayNames.map((name) {
-          final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
-          return Padding(
-            padding: const EdgeInsets.only(right: 4.0),
-            child: CircleAvatar(
-              radius: 12,
-              backgroundColor: Colors.green.shade800,
-              child: Text(
-                initial,
-                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          DndSpacing.md, DndSpacing.sm, DndSpacing.md, DndSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Icon(Icons.sticky_note_2_outlined,
+                  size: 15, color: DndColors.amber),
+              const SizedBox(width: DndSpacing.xs),
+              Text(
+                "Note du MJ",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: DndColors.amber,
+                ),
               ),
-            ),
-          );
-        }),
-        if (overflow > 0)
-          Padding(
-            padding: const EdgeInsets.only(right: 4.0),
-            child: CircleAvatar(
-              radius: 12,
-              backgroundColor: Colors.grey.shade800,
-              child: Text(
-                "+$overflow",
-                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
+              if (widget.isAdmin) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    if (_editing) {
+                      _save();
+                    } else {
+                      setState(() => _editing = true);
+                    }
+                  },
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          _editing
+                              ? Icons.check_circle_outline
+                              : Icons.edit_outlined,
+                          size: 18,
+                          color: _editing
+                              ? DndColors.beerGreen
+                              : DndColors.onSurfaceMuted,
+                        ),
+                ),
+                if (_editing) ...[
+                  const SizedBox(width: DndSpacing.xs),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _ctrl.text = widget.session.notes;
+                      _editing = false;
+                    }),
+                    child: Icon(Icons.close, size: 18,
+                        color: DndColors.onSurfaceMuted),
+                  ),
+                ],
+              ],
+            ],
           ),
-      ],
+          const SizedBox(height: DndSpacing.xs),
+
+          // Body: editing or read-only
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _editing
+                ? TextField(
+                    key: const ValueKey('editor'),
+                    controller: _ctrl,
+                    maxLines: null,
+                    autofocus: true,
+                    textInputAction: TextInputAction.newline,
+                    decoration: const InputDecoration(
+                      hintText: "Ajouter une note pour cette session…",
+                      isDense: true,
+                    ),
+                  )
+                : hasNotes
+                    ? Container(
+                        key: const ValueKey('display'),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(DndSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: DndColors.amber.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: DndColors.amber.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Text(
+                          widget.session.notes,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      )
+                    : widget.isAdmin
+                        ? Text(
+                            "Aucune note — appuie sur ✏️ pour en ajouter.",
+                            key: const ValueKey('empty'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: DndColors.onSurfaceMuted,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          )
+                        : const SizedBox.shrink(key: ValueKey('nothing')),
+          ),
+        ],
+      ),
     );
   }
 }
