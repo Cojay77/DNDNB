@@ -1,58 +1,37 @@
 import 'package:dndnb/models/update_banner.dart';
-import 'package:dndnb/utils/platform_utils_stub.dart';
-import 'package:dndnb/utils/pwa_utils.dart';
+import 'package:dndnb/utils/platform_utils.dart';
 import 'package:dndnb/widgets/bottom_bar_widget.dart';
-import 'package:dndnb/widgets/installPromptButton.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dndnb/widgets/install_prompt_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../main.dart';
-import 'package:firebase_database/firebase_database.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final AuthService _authService = AuthService();
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref("homeMessage");
 
-  final _beerRef = FirebaseDatabase.instance.ref('beerStock/value');
-  final FirebaseGameService _gameService = FirebaseGameService();
-
-  bool isAdmin = false;
-  String? userEmail;
   String? displayName;
-  String? version;
-  String? buildNumber;
-
-  Future<String>? _homeMessageFuture;
-  Future<String>? _releaseNoteFuture;
 
   @override
   void initState() {
     super.initState();
 
-    _homeMessageFuture = _fetchHomeMessage();
-    _releaseNoteFuture = _fetchReleaseNote();
-
     final user = _authService.currentUser;
-    userEmail = user?.email;
     displayName = user?.displayName;
+
+    // Register/refresh token on app open
     if (user != null) {
-      _authService.isUserAdmin(user.uid).then((value) {
-        setState(() {
-          isAdmin = value;
-        });
-      });
+      _authService.refreshTokenIfNeeded(user.uid);
     }
-    _refreshTokenManually();
   }
 
   @override
@@ -68,45 +47,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   void dispose() {
     routeObserver.unsubscribe(this);
     super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    _gameService.fetchUpcomingBeerContributions();
-  }
-
-  Future<String> _fetchHomeMessage() async {
-    final messageRef = _dbRef;
-    final snap = await messageRef.child('text').get();
-    if (snap.exists) {
-      return snap.value.toString().replaceAll("\\n", "\n");
-    } else {
-      return "Pas de message";
-    }
-  }
-
-  Future<String> _fetchReleaseNote() async {
-    final messageRef = _dbRef;
-    final snap = await messageRef.child('releasenote').get();
-    if (snap.exists) {
-      return snap.value.toString().replaceAll("\\n", "\n");
-    } else {
-      return "Pas de message";
-    }
-  }
-
-  void _refreshTokenManually() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final token = await FirebaseMessaging.instance.getToken();
-    final ref = FirebaseDatabase.instance.ref('webTokens/${user.uid}');
-    final snapshot = await ref.get();
-
-    if (snapshot.value != token) {
-      await ref.set(token);
-      debugPrint("Token mis à jour manuellement : $token");
-    }
   }
 
   Color _stockColor(double stock) {
@@ -125,6 +65,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isAdmin = ref.watch(isAdminProvider);
+    final homeMessage = ref.watch(homeMessageStreamProvider);
+    final releaseNote = ref.watch(releaseNoteStreamProvider);
+    final beerStock = ref.watch(beerStockStreamProvider);
+    final upcomingContributions = ref.watch(upcomingBeerContributionsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -135,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await _authService.logout();
-              Navigator.pushReplacementNamed(context, '/login');
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
             },
           ),
         ],
@@ -145,8 +92,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ecran de debug
-            // if (isAdmin) const NotificationsDebug(),
             Text("Bienvenue, ${displayName ?? 'utilisateur'} !"),
             const SizedBox(height: 30),
             ElevatedButton.icon(
@@ -163,20 +108,25 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 10),
-            if (isAdmin)
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/admin');
-                },
-                icon: const Icon(Icons.shield),
-                label: const Text("Espace Admin"),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+            isAdmin.when(
+              data: (admin) => admin
+                  ? ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/admin');
+                      },
+                      icon: const Icon(Icons.shield),
+                      label: const Text("Espace Admin"),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
             const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {
@@ -192,6 +142,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Home message card — now realtime
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -202,22 +154,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
-                    FutureBuilder<String>(
-                      future: _homeMessageFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        if (!snapshot.hasData) {
-                          return const Text("Aucun message pour le moment.");
-                        }
-                        return Text(
-                          snapshot.data!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium,
-                        );
-                      },
+                    homeMessage.when(
+                      data: (msg) => Text(
+                        msg,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (e, _) => Text(
+                        "Erreur de chargement",
+                        style: TextStyle(color: Colors.red.shade300),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Icon(
@@ -226,27 +173,23 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(height: 10),
-                    FutureBuilder<String>(
-                      future: _releaseNoteFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        if (!snapshot.hasData) {
-                          return const Text("");
-                        }
-                        return Text(
-                          snapshot.data!,
-                          textAlign: TextAlign.left,
-                          style: theme.textTheme.bodyMedium,
-                        );
-                      },
+                    releaseNote.when(
+                      data: (note) => note.isEmpty
+                          ? const SizedBox.shrink()
+                          : Text(
+                              note,
+                              textAlign: TextAlign.left,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (_, __) => const SizedBox.shrink(),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // PWA install prompts
             if (kIsWeb && !isIOSBrowser() && !isAppInstalled()) ...[
               const InstallPromptButton(),
             ],
@@ -268,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         child: Text(
                           "Pour installer l'application :\nAppuyez sur "
                           "le bouton de partage (en bas de l'écran), "
-                          "puis \"Ajouter à l’écran d’accueil\".",
+                          "puis \"Ajouter à l'écran d'accueil\".",
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -277,36 +220,26 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 ),
               ),
             ],
-            FutureBuilder(
-              future: Future.wait([
-                _beerRef.get(), // stock actuel
-                _gameService
-                    .fetchUpcomingBeerContributions(), // contributions prévues
-              ]),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data == null) {
-                  return const CircularProgressIndicator();
-                }
 
-                final stockSnapshot = snapshot.data![0] as DataSnapshot;
-                final stock = (stockSnapshot.value as num?)?.toDouble() ?? 0.0;
-                final contributions = snapshot.data![1] as int;
-
+            // Beer stock gauge — now realtime
+            beerStock.when(
+              data: (stock) {
+                final contributions = upcomingContributions.valueOrNull ?? 0;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        //const Icon(Icons.local_drink, color: Colors.amber),
                         const SizedBox(width: 8),
                         Text(
                           "🍻 Réserve + Apports",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                color: Colors.amber,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ],
                     ),
@@ -315,14 +248,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                       borderRadius: BorderRadius.circular(10),
                       child: Stack(
                         children: [
-                          // 🔴 Fond gris
                           Container(
                             height: 20,
                             width: double.infinity,
                             color: Colors.grey.shade800,
                           ),
-
-                          // 🟩 Stock actuel (plein)
                           FractionallySizedBox(
                             alignment: Alignment.centerLeft,
                             widthFactor: (stock / 50).clamp(0.0, 1.0),
@@ -331,21 +261,15 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                               color: _stockColor(stock),
                             ),
                           ),
-
-                          // 🟨 Apports à venir (translucide)
                           FractionallySizedBox(
                             alignment: Alignment.centerLeft,
-                            widthFactor: ((stock + contributions) / 50).clamp(
-                              0.0,
-                              1.0,
-                            ),
+                            widthFactor:
+                                ((stock + contributions) / 50).clamp(0.0, 1.0),
                             child: Container(
                               height: 20,
-                              color: Colors.green.withOpacity(0.3),
+                              color: Colors.green.withValues(alpha: 0.3),
                             ),
                           ),
-
-                          // 📊 Optionnel : texte au-dessus
                           Center(
                             child: Text(
                               "${(stock + contributions).clamp(0, 50).toInt()} bières",
@@ -359,7 +283,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 4),
                     Text(
                       "Stock actuel : ${stock.toInt()}  |  Apports prévus : $contributions",
@@ -372,6 +295,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   ],
                 );
               },
+              loading: () => const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+              error: (e, _) => Text(
+                "Erreur chargement stock",
+                style: TextStyle(color: Colors.red.shade300),
+              ),
             ),
 
             const UpdateBanner(),

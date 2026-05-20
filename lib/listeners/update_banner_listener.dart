@@ -1,5 +1,5 @@
-import 'dart:html' as html;
 import 'package:dndnb/listeners/update_detector.dart';
+import 'package:dndnb/utils/platform_utils.dart';
 import 'package:flutter/material.dart';
 
 class UpdateBannerListener extends StatefulWidget {
@@ -27,7 +27,6 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
   @override
   void initState() {
     super.initState();
-
     checkUpdateAvailable();
   }
 
@@ -45,16 +44,17 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.deepOrange.withOpacity(0.95),
-                    Colors.black.withOpacity(0.8),
+                    Colors.deepOrange.withValues(alpha: 0.95),
+                    Colors.black.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: GestureDetector(
-                onTap: () => html.window.location.reload(),
+                onTap: () => reloadPage(),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
@@ -64,7 +64,7 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
                       "🔥 Nouvelle version disponible — Appuyez pour recharger",
                       style: TextStyle(
                         color: Colors.white,
-                        fontFamily: 'UncialAntiqua', // Si installée
+                        fontFamily: 'UncialAntiqua',
                         fontSize: 14,
                       ),
                     ),

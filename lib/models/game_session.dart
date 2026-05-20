@@ -38,12 +38,19 @@ class GameSession {
       date: data['date'] ?? '',
       createdBy: data['createdBy'] ?? '',
       availability: Map<String, bool>.from(data['availability'] ?? {}),
-      status: data['status'] ?? '',
+      status: data['status'] ?? 'prévue',
       beerContributions: Map<String, int>.from(data['beerContributions'] ?? {}),
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'date': date, 'createdBy': createdBy, 'availability': availability};
+    return {
+      'title': title,
+      'date': date,
+      'createdBy': createdBy,
+      'availability': availability,
+      'status': status,
+      'beerContributions': beerContributions,
+    };
   }
 }

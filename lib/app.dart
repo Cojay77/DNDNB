@@ -1,7 +1,7 @@
 import '../screens/profile_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_screen.dart';
@@ -9,37 +9,19 @@ import 'screens/game_sessions_screen.dart';
 import 'screens/splash_screen.dart';
 import 'package:dndnb/screens/send_notification_screen.dart';
 import 'package:dndnb/screens/archived_sessions_screen.dart';
+import 'services/auth_service.dart';
 
-class DndApp extends StatefulWidget {
+class DndApp extends ConsumerWidget {
   final RouteObserver<PageRoute> routeObserver;
   const DndApp({super.key, required this.routeObserver});
 
   @override
-  State<DndApp> createState() => _DndAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
 
-class _DndAppState extends State<DndApp> {
-  Widget? initialScreen;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAuth();
-  }
-
-  void _checkAuth() async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    final user = FirebaseAuth.instance.currentUser;
-    setState(() {
-      initialScreen = user != null ? const HomeScreen() : const LoginScreen();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'D&D&B',
-      navigatorObservers: [widget.routeObserver],
+      navigatorObservers: [routeObserver],
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         primarySwatch: Colors.deepOrange,
@@ -64,7 +46,7 @@ class _DndAppState extends State<DndApp> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Color(0xFF1E1E1E),
           elevation: 3,
           shape: RoundedRectangleBorder(
@@ -89,7 +71,6 @@ class _DndAppState extends State<DndApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      initialRoute: '/',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
@@ -100,9 +81,14 @@ class _DndAppState extends State<DndApp> {
         '/admin/notif': (context) => const SendNotificationScreen(),
         '/sessions/archived': (context) => const ArchivedSessionsScreen(),
       },
-      home:
-          initialScreen ??
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      home: authState.when(
+        data: (user) =>
+            user != null ? const HomeScreen() : const LoginScreen(),
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (_, __) => const LoginScreen(),
+      ),
     );
   }
 }

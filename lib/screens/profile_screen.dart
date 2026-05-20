@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-/* import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io'; */
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,32 +13,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final user = FirebaseAuth.instance.currentUser!;
   final AuthService _authService = AuthService();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _photoController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _nameController.text = user.displayName ?? '';
-    _photoController.text = user.photoURL ?? '';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   Future<void> _updateProfile() async {
     try {
       var displayName = _nameController.text.trim();
+      if (displayName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Le pseudo ne peut pas être vide.")),
+        );
+        return;
+      }
+
       await user.updateDisplayName(displayName);
-      await user.updatePhotoURL(_photoController.text.trim());
       await _authService.setDisplayName(user, displayName);
-      await user.reload(); // recharge l'utilisateur
+      await user.reload();
       setState(() {});
 
-      // met à jour l'affichage
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("✅ Profil mis à jour !")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Profil mis à jour !")),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("❌ Erreur : $e")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Erreur : $e")),
+      );
     }
   }
 
@@ -66,19 +74,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: _nameController,
               decoration: const InputDecoration(labelText: "Pseudo"),
             ),
-            /* const SizedBox(height: 12),
-            TextField(
-              controller: _photoController,
-              decoration: const InputDecoration(
-                labelText: "URL photo de profil",
-              ),
-            ), */
-            /* const SizedBox(height: 20),
-                        TextButton.icon(
-              onPressed: _pickAndUploadImage,
-              icon: const Icon(Icons.image),
-              label: const Text("Changer la photo depuis la galerie"),
-            ), */
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _updateProfile,
@@ -89,33 +84,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
-  /* Future<void> _pickAndUploadImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final File file = File(pickedFile.path);
-      final fileName = 'profile_${user.uid}.jpg';
-      final storageRef = FirebaseStorage.instance.ref().child(
-        'profile_pictures/$fileName',
-      );
-
-      try {
-        final uploadTask = await storageRef.putFile(file);
-        final downloadURL = await uploadTask.ref.getDownloadURL();
-
-        await user.updatePhotoURL(downloadURL);
-        await user.reload();
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Photo de profil mise à jour")),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("❌ Erreur de chargement : $e")));
-      }
-    }
-  } */
 }

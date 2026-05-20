@@ -1,37 +1,14 @@
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:dndnb/services/auth_service.dart';
 
+/// Register push notification token for the given user.
+/// Works on both Web and mobile platforms.
+/// 
+/// This is a convenience wrapper around AuthService.registerToken.
 Future<void> registerWebToken(String userId) async {
-  if (!kIsWeb) return;
-
-  try {
-    final token = await FirebaseMessaging.instance.getToken(
-      vapidKey:
-          "BPnJahKmOlUPaI_adobh5Zp53Z25q02sHebm4MP5JhCnkY_eO8-1C5sQVRZuF9rTs6S7j4vgD9ydloKy4IFz_3M",
-    );
-
-    if (token != null) {
-      final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
-      await ref.set(token);
-      debugPrint("✅ Web token enregistré : $token");
-    } else {
-      debugPrint("❌ Aucun token reçu");
-    }
-  } catch (e) {
-    debugPrint("❌ Erreur lors de l'enregistrement du token Web : $e");
-  }
+  await AuthService().registerToken(userId);
 }
 
+/// Same as registerWebToken — unified for all platforms.
 Future<void> registerWebTokenOnApp(String userId) async {
-  try {
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
-      final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
-      await ref.set(token);
-      debugPrint("✅ Mobile token enregistré : $token");
-    }
-  } catch (e) {
-    debugPrint("❌ Erreur lors de l'enregistrement du token Web sur App : $e");
-  }
+  await AuthService().registerToken(userId);
 }

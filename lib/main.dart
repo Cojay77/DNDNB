@@ -3,24 +3,26 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR', null);
 
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-    debugPrint("🔁 Nouveau token Web : $newToken");
+    debugPrint("🔁 Nouveau token : $newToken");
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
         await FirebaseDatabase.instance
-            .ref("users/${user.uid}/webToken")
+            .ref("webTokens/${user.uid}")
             .set(newToken);
         debugPrint("✅ Nouveau token enregistré dans la base");
       } catch (e) {
@@ -31,5 +33,9 @@ void main() async {
     }
   });
 
-  runApp(DndApp(routeObserver: routeObserver));
+  runApp(
+    ProviderScope(
+      child: DndApp(routeObserver: routeObserver),
+    ),
+  );
 }

@@ -1,5 +1,26 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Provides the current Firebase Auth user as a stream
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
+
+/// Provides admin status for the current user
+final isAdminProvider = FutureProvider<bool>((ref) async {
+  final authState = ref.watch(authStateProvider);
+  return authState.when(
+    data: (user) async {
+      if (user == null) return false;
+      return await AuthService().isUserAdmin(user.uid);
+    },
+    loading: () => false,
+    error: (_, __) => false,
+  );
+});
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,9 +50,10 @@ class AuthService {
       }
 
       return user;
+    } on FirebaseAuthException catch (e) {
+      throw AuthException.fromFirebase(e);
     } catch (e) {
-      //print("Register error: $e");
-      return null;
+      throw AuthException("Erreur d'inscription : $e");
     }
   }
 
@@ -47,9 +69,10 @@ class AuthService {
         password: password,
       );
       return result.user;
+    } on FirebaseAuthException catch (e) {
+      throw AuthException.fromFirebase(e);
     } catch (e) {
-      //print("Login error: $e");
-      return null;
+      throw AuthException("Erreur de connexion : $e");
     }
   }
 
@@ -68,4 +91,80 @@ class AuthService {
   }
 
   User? get currentUser => _auth.currentUser;
+
+  /// Register FCM token for push notifications
+  Future<void> registerToken(String userId) async {
+    try {
+      String? token;
+
+      if (kIsWeb) {
+        token = await FirebaseMessaging.instance.getToken(
+          vapidKey: const String.fromEnvironment(
+            'VAPID_KEY',
+            defaultValue:
+                "BPnJahKmOlUPaI_adobh5Zp53Z25q02sHebm4MP5JhCnkY_eO8-1C5sQVRZuF9rTs6S7j4vgD9ydloKy4IFz_3M",
+          ),
+        );
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
+
+      if (token != null) {
+        final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
+        await ref.set(token);
+        debugPrint("✅ Token enregistré : $token");
+      }
+    } catch (e) {
+      debugPrint("❌ Erreur lors de l'enregistrement du token : $e");
+    }
+  }
+
+  /// Refresh token if it changed
+  Future<void> refreshTokenIfNeeded(String userId) async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      final ref = FirebaseDatabase.instance.ref('webTokens/$userId');
+      final snapshot = await ref.get();
+
+      if (snapshot.value != token) {
+        await ref.set(token);
+        debugPrint("Token mis à jour : $token");
+      }
+    } catch (e) {
+      debugPrint("❌ Erreur refresh token : $e");
+    }
+  }
+}
+
+/// Custom exception for auth errors with user-friendly messages
+class AuthException implements Exception {
+  final String message;
+
+  AuthException(this.message);
+
+  factory AuthException.fromFirebase(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return AuthException("Aucun compte trouvé avec cet email.");
+      case 'wrong-password':
+        return AuthException("Mot de passe incorrect.");
+      case 'invalid-email':
+        return AuthException("Adresse email invalide.");
+      case 'user-disabled':
+        return AuthException("Ce compte a été désactivé.");
+      case 'email-already-in-use':
+        return AuthException("Cet email est déjà utilisé.");
+      case 'weak-password':
+        return AuthException("Le mot de passe est trop faible (6 caractères minimum).");
+      case 'too-many-requests':
+        return AuthException("Trop de tentatives. Réessayez plus tard.");
+      case 'network-request-failed':
+        return AuthException("Erreur réseau. Vérifiez votre connexion.");
+      default:
+        return AuthException("Erreur d'authentification : ${e.message}");
+    }
+  }
+
+  @override
+  String toString() => message;
 }

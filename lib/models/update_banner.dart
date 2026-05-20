@@ -1,4 +1,3 @@
-//vide
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -67,7 +66,7 @@ class _UpdateBannerState extends State<UpdateBanner> {
 
     return Material(
       elevation: 6,
-      color: Colors.deepOrange.withOpacity(0.95),
+      color: Colors.deepOrange.withValues(alpha: 0.95),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(

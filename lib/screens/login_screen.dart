@@ -1,11 +1,8 @@
-import 'package:dndnb/services/notification_service.dart';
-import 'package:dndnb/utils/platform_utils_stub.dart';
-import 'package:dndnb/utils/pwa_utils.dart';
+import 'package:dndnb/utils/platform_utils.dart';
 import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'dart:js' as js;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController displayNameController = TextEditingController();
 
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,31 +31,28 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    final user = await _authService.login(email, password);
-
-    //Token sur Web
-    if (kIsWeb && user?.uid != null) {
-      var userId = user?.uid;
-      registerWebToken(userId!);
+    if (email.isEmpty || password.isEmpty) {
+      _showError("Veuillez remplir tous les champs.");
+      return;
     }
 
-    //Token sur App
-    if (!kIsWeb && user != null) {
-      var userId = user.uid;
-      registerWebTokenOnApp(userId);
-    }
+    setState(() => _isLoading = true);
 
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      showDialog(
-        context: context,
-        builder:
-            (_) => const AlertDialog(
-              title: Text("Erreur"),
-              content: Text("Connexion échouée."),
-            ),
-      );
+    try {
+      final user = await _authService.login(email, password);
+
+      if (user != null) {
+        await _authService.registerToken(user.uid);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError("Une erreur inattendue s'est produite.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -66,32 +61,45 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text.trim();
     final displayName = displayNameController.text.trim();
 
-    final user = await _authService.register(email, password, displayName);
-
-    //Token sur Web
-    if (kIsWeb && user?.uid != null) {
-      var userId = user?.uid;
-      registerWebToken(userId!);
+    if (email.isEmpty || password.isEmpty) {
+      _showError("Veuillez remplir email et mot de passe.");
+      return;
     }
 
-    //Token sur App
-    if (!kIsWeb && user != null) {
-      var userId = user.uid;
-      registerWebTokenOnApp(userId);
+    if (displayName.isEmpty) {
+      _showError("Veuillez entrer un pseudo pour créer un compte.");
+      return;
     }
 
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      showDialog(
-        context: context,
-        builder:
-            (_) => const AlertDialog(
-              title: Text("Erreur"),
-              content: Text("Inscription échouée."),
-            ),
-      );
+    setState(() => _isLoading = true);
+
+    try {
+      final user = await _authService.register(email, password, displayName);
+
+      if (user != null) {
+        await _authService.registerToken(user.uid);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError("Une erreur inattendue s'est produite.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade800,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -109,12 +117,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: emailController,
                   decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(labelText: 'Mot de passe'),
+                  textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -122,23 +133,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Pseudo (si tu crées un compte)',
                   ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => handleLogin(),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: handleLogin,
-                  child: const Text("Se connecter"),
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: handleSignUp,
-                  child: const Text("Créer un compte"),
-                ),
-                if (kIsWeb && !isIOSBrowser() && !isAppInstalled()) ...[
+                if (_isLoading)
+                  const CircularProgressIndicator()
+                else ...[
                   ElevatedButton(
-                    onPressed: () {
-                      js.context.callMethod('promptInstall');
-                    },
-                    child: const Text("Installer l’application"),
+                    onPressed: handleLogin,
+                    child: const Text("Se connecter"),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: handleSignUp,
+                    child: const Text("Créer un compte"),
+                  ),
+                ],
+                if (kIsWeb && !isIOSBrowser() && !isAppInstalled()) ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => promptInstall(),
+                    child: const Text("Installer l'application"),
                   ),
                 ],
                 if (kIsWeb && isIOSBrowser()) ...[
@@ -159,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text(
                               "Pour installer l'application :\nAppuyez sur "
                               "le bouton de partage (en bas de l'écran), "
-                              "puis \"Ajouter à l’écran d’accueil\".",
+                              "puis \"Ajouter à l'écran d'accueil\".",
                               style: TextStyle(color: Colors.white),
                             ),
                           ),
