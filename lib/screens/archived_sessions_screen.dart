@@ -1,22 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/firebase_service.dart';
+import '../widgets/status_badge.dart';
 
 class ArchivedSessionsScreen extends ConsumerWidget {
   const ArchivedSessionsScreen({super.key});
-
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'confirmée':
-        return Colors.green;
-      case 'annulée':
-        return Colors.red;
-      case 'modifiée':
-        return Colors.orange;
-      default:
-        return const Color.fromARGB(0, 158, 158, 158);
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -99,30 +87,7 @@ class ArchivedSessionsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (_statusColor(session.status) !=
-                      const Color.fromARGB(0, 158, 158, 158))
-                    Positioned(
-                      right: -8,
-                      top: 20,
-                      child: Transform.rotate(
-                        angle: 0.8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          color: _statusColor(session.status),
-                          child: Text(
-                            session.status.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  StatusBadge(status: session.status),
                 ],
               );
             },

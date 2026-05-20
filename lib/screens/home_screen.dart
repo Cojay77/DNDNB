@@ -1,7 +1,8 @@
-import 'package:dndnb/models/update_banner.dart';
+import 'package:dndnb/widgets/update_banner.dart';
 import 'package:dndnb/utils/platform_utils.dart';
 import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:dndnb/widgets/install_prompt_button.dart';
+import 'package:dndnb/widgets/beer_stock_gauge.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,19 +48,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   void dispose() {
     routeObserver.unsubscribe(this);
     super.dispose();
-  }
-
-  Color _stockColor(double stock) {
-    switch (stock) {
-      case >= 15:
-        return Colors.green;
-      case < 15 && >= 8:
-        return Colors.orange;
-      case < 8:
-        return Colors.red;
-      default:
-        return const Color.fromARGB(0, 158, 158, 158);
-    }
   }
 
   @override
@@ -225,74 +213,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             beerStock.when(
               data: (stock) {
                 final contributions = upcomingContributions.valueOrNull ?? 0;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const SizedBox(width: 8),
-                        Text(
-                          "🍻 Réserve + Apports",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Stack(
-                        children: [
-                          Container(
-                            height: 20,
-                            width: double.infinity,
-                            color: Colors.grey.shade800,
-                          ),
-                          FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: (stock / 50).clamp(0.0, 1.0),
-                            child: Container(
-                              height: 20,
-                              color: _stockColor(stock),
-                            ),
-                          ),
-                          FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor:
-                                ((stock + contributions) / 50).clamp(0.0, 1.0),
-                            child: Container(
-                              height: 20,
-                              color: Colors.green.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          Center(
-                            child: Text(
-                              "${(stock + contributions).clamp(0, 50).toInt()} bières",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Stock actuel : ${stock.toInt()}  |  Apports prévus : $contributions",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
+                return BeerStockGauge(
+                  stock: stock,
+                  contributions: contributions,
                 );
               },
               loading: () => const Padding(

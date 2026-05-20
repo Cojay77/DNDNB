@@ -9,6 +9,7 @@ import 'screens/game_sessions_screen.dart';
 import 'screens/splash_screen.dart';
 import 'package:dndnb/screens/send_notification_screen.dart';
 import 'package:dndnb/screens/archived_sessions_screen.dart';
+import 'package:dndnb/utils/theme.dart';
 import 'services/auth_service.dart';
 
 class DndApp extends ConsumerWidget {
@@ -23,47 +24,7 @@ class DndApp extends ConsumerWidget {
       title: 'D&D&B',
       navigatorObservers: [routeObserver],
       themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        primarySwatch: Colors.deepOrange,
-        fontFamily: 'UncialAntiqua',
-        textTheme: ThemeData.dark().textTheme.copyWith(
-          headlineMedium: TextStyle(fontFamily: 'UncialAntiqua'),
-          titleLarge: TextStyle(fontFamily: 'UncialAntiqua'),
-        ),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF4500), // feu
-          secondary: Color(0xFF8B0000),
-          surface: Color(0xFF1E1E1E),
-          onPrimary: Colors.white,
-          onSecondary: Colors.white,
-          onSurface: Colors.white70,
-        ),
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          color: Color(0xFF1E1E1E),
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFFF4500),
-            foregroundColor: Colors.white,
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
+      darkTheme: AppTheme.darkTheme,
       locale: const Locale('fr', 'FR'),
       supportedLocales: const [Locale('fr', 'FR')],
       localizationsDelegates: const [
