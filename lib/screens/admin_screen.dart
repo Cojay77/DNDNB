@@ -129,10 +129,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               onPressed: selectedDate == null
                   ? null
                   : () async {
-                      final formatted = formatDate(selectedDate!);
+                      // Save using ISO 8601 format!
+                      final isoDate = selectedDate!.toIso8601String();
                       final sessionTitle = titleController.text.trim();
                       await gameService.createSession(
-                        formatted,
+                        isoDate,
                         _userId,
                         sessionTitle,
                       );
@@ -167,7 +168,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       final session = sessions[index];
                       return Card(
                         child: ListTile(
-                          title: Text("📅 ${session.date}"),
+                          title: Text("📅 ${session.displayDate}"),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

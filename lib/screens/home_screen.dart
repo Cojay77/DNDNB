@@ -3,9 +3,11 @@ import 'package:dndnb/utils/platform_utils.dart';
 import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:dndnb/widgets/install_prompt_button.dart';
 import 'package:dndnb/widgets/beer_stock_gauge.dart';
+import 'package:dndnb/widgets/next_session_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/auth_service.dart';
 import '../services/firebase_service.dart';
 import '../main.dart';
@@ -80,22 +82,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Bienvenue, ${displayName ?? 'utilisateur'} !"),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/sessions');
-              },
-              icon: const Icon(Icons.play_arrow),
-              label: const Text("Voir les sessions"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            Text("Bienvenue, ${displayName ?? 'utilisateur'} !",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 24),
+            
+            // Hero Next Session Card acts as the CTA
+            InkWell(
+              onTap: () => Navigator.pushNamed(context, '/sessions'),
+              borderRadius: BorderRadius.circular(16),
+              child: const NextSessionCard(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 24),
             isAdmin.when(
               data: (admin) => admin
                   ? ElevatedButton.icon(
@@ -148,7 +145,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium,
                       ),
-                      loading: () => const CircularProgressIndicator(),
+                      loading: () => Shimmer.fromColors(
+                        baseColor: Colors.grey.shade800,
+                        highlightColor: Colors.grey.shade700,
+                        child: Container(
+                          height: 20,
+                          width: 200,
+                          color: Colors.white,
+                        ),
+                      ),
                       error: (e, _) => Text(
                         "Erreur de chargement",
                         style: TextStyle(color: Colors.red.shade300),
@@ -169,7 +174,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                               textAlign: TextAlign.left,
                               style: theme.textTheme.bodyMedium,
                             ),
-                      loading: () => const CircularProgressIndicator(),
+                      loading: () => Shimmer.fromColors(
+                        baseColor: Colors.grey.shade800,
+                        highlightColor: Colors.grey.shade700,
+                        child: Container(
+                          height: 20,
+                          width: 200,
+                          color: Colors.white,
+                        ),
+                      ),
                       error: (_, __) => const SizedBox.shrink(),
                     ),
                   ],
@@ -218,9 +231,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   contributions: contributions,
                 );
               },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
+              loading: () => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey.shade800,
+                  highlightColor: Colors.grey.shade700,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 20, width: 150, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(height: 20, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+                    ],
+                  ),
+                ),
               ),
               error: (e, _) => Text(
                 "Erreur chargement stock",

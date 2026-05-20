@@ -40,13 +40,22 @@ class SessionCard extends StatelessWidget {
             leading: const Icon(Icons.expand_more),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: currentValue == null
+                  ? BorderSide(color: theme.colorScheme.primary, width: 2)
+                  : BorderSide.none,
+            ),
+            collapsedShape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: currentValue == null
+                  ? BorderSide(color: theme.colorScheme.primary, width: 2)
+                  : BorderSide.none,
             ),
             tilePadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
             ),
             title: Text(
-              "📅 ${session.date.substring(0, session.date.length > 5 ? session.date.length - 5 : session.date.length)}",
+              "📅 ${session.displayDate}",
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -62,35 +71,38 @@ class SessionCard extends StatelessWidget {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "${countAvailable(session)} joueur(s) disponible(s)",
-                  style: const TextStyle(fontSize: 13),
+                const SizedBox(height: 8),
+                _AttendingAvatarRow(
+                  session: session,
+                  usernameCache: usernameCache,
                 ),
               ],
             ),
-            trailing: DropdownButton<bool?>(
-              value: currentValue,
-              icon: const Icon(Icons.arrow_drop_down),
-              underline: Container(),
-              items: const [
-                DropdownMenuItem(
-                  value: true,
-                  child: Text("Présent"),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildResponseButton(
+                  context,
+                  icon: Icons.check_circle,
+                  color: Colors.green,
+                  isSelected: currentValue == true,
+                  onTap: () => gameService.toggleAvailability(session.id, userId, true),
                 ),
-                DropdownMenuItem(
-                  value: false,
-                  child: Text("Absent"),
+                _buildResponseButton(
+                  context,
+                  icon: Icons.cancel,
+                  color: Colors.red,
+                  isSelected: currentValue == false,
+                  onTap: () => gameService.toggleAvailability(session.id, userId, false),
                 ),
-                DropdownMenuItem(
-                  value: null,
-                  child: Text("Non répondu"),
+                _buildResponseButton(
+                  context,
+                  icon: Icons.help,
+                  color: Colors.grey,
+                  isSelected: currentValue == null,
+                  onTap: () => gameService.toggleAvailability(session.id, userId, null),
                 ),
               ],
-              onChanged: (value) async {
-                await gameService.toggleAvailability(
-                    session.id, userId, value!);
-              },
             ),
             children: [
               // Beer contribution input
@@ -156,6 +168,35 @@ class SessionCard extends StatelessWidget {
         // Status badge
         StatusBadge(status: session.status),
       ],
+    );
+  }
+
+  Widget _buildResponseButton(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? color : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? color : Colors.grey.shade600,
+          size: 24,
+        ),
+      ),
     );
   }
 }
@@ -330,6 +371,104 @@ class BeerContributionsList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _AttendingAvatarRow extends StatefulWidget {
+  final GameSession session;
+  final UsernameCacheNotifier usernameCache;
+
+  const _AttendingAvatarRow({
+    required this.session,
+    required this.usernameCache,
+  });
+
+  @override
+  State<_AttendingAvatarRow> createState() => _AttendingAvatarRowState();
+}
+
+class _AttendingAvatarRowState extends State<_AttendingAvatarRow> {
+  List<String> _presentNames = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolvePresentUsernames();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AttendingAvatarRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.session.availability != widget.session.availability) {
+      _resolvePresentUsernames();
+    }
+  }
+
+  Future<void> _resolvePresentUsernames() async {
+    final presentUserIds = widget.session.availability.entries
+        .where((e) => e.value == true)
+        .map((e) => e.key)
+        .toList();
+
+    final names = await Future.wait(
+        presentUserIds.map((id) => widget.usernameCache.getUsername(id)),
+    );
+
+    if (mounted) {
+      setState(() {
+        _presentNames = names;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        height: 24,
+        child: Text("Chargement des joueurs...", style: TextStyle(fontSize: 12, color: Colors.grey)),
+      );
+    }
+
+    if (_presentNames.isEmpty) {
+      return const Text("Aucun joueur confirmé pour l'instant", style: TextStyle(fontSize: 12, color: Colors.grey));
+    }
+
+    final displayNames = _presentNames.take(5).toList();
+    final overflow = _presentNames.length - 5;
+
+    return Row(
+      children: [
+        ...displayNames.map((name) {
+          final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
+          return Padding(
+            padding: const EdgeInsets.only(right: 4.0),
+            child: CircleAvatar(
+              radius: 12,
+              backgroundColor: Colors.green.shade800,
+              child: Text(
+                initial,
+                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }),
+        if (overflow > 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 4.0),
+            child: CircleAvatar(
+              radius: 12,
+              backgroundColor: Colors.grey.shade800,
+              child: Text(
+                "+$overflow",
+                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

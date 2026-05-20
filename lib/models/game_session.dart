@@ -22,12 +22,43 @@ class GameSession {
 
   DateTime get parsedDate {
     try {
-      final cleaned = date.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
-      final format = DateFormat("EEEE d MMMM yyyy", "fr_FR");
-      return format.parse(cleaned);
-    } catch (e) {
-      debugPrint("⚠️ Erreur de parsing pour la date \"$date\": $e");
-      return DateTime(2100);
+      // First try standard ISO 8601 parsing (the new format)
+      return DateTime.parse(date);
+    } catch (_) {
+      // Fallback for old French string format if any data is left over
+      try {
+        final cleaned = date.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+        final format = DateFormat("EEEE d MMMM yyyy", "fr_FR");
+        return format.parse(cleaned);
+      } catch (e) {
+        debugPrint("⚠️ Erreur de parsing absolue pour la date \"$date\": $e");
+        return DateTime(2100);
+      }
+    }
+  }
+
+  String get displayDate {
+    try {
+      final dt = parsedDate;
+      if (dt.year == 2100) return date; // fallback to raw string if parsing failed
+      
+      final formatter = DateFormat("EEEE d MMMM yyyy", "fr_FR");
+      final raw = formatter.format(dt);
+      return raw[0].toUpperCase() + raw.substring(1);
+    } catch (_) {
+      return date;
+    }
+  }
+
+  String get shortDisplayDate {
+    try {
+      final dt = parsedDate;
+      if (dt.year == 2100) return date;
+      
+      final formatter = DateFormat("d MMM yyyy", "fr_FR");
+      return formatter.format(dt);
+    } catch (_) {
+      return date;
     }
   }
 

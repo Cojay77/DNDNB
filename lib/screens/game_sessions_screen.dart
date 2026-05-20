@@ -3,6 +3,7 @@ import 'package:dndnb/widgets/bottom_bar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/firebase_service.dart';
 import '../widgets/session_card.dart';
 
@@ -45,8 +46,25 @@ class _GameSessionsScreenState extends ConsumerState<GameSessionsScreen> {
           const UpdateBanner(),
           Expanded(
             child: sessionsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => ListView.builder(
+                itemCount: 4,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey.shade800,
+                      highlightColor: Colors.grey.shade700,
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -69,10 +87,26 @@ class _GameSessionsScreenState extends ConsumerState<GameSessionsScreen> {
               ),
               data: (sessions) {
                 if (sessions.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      "Aucune session prévue pour le moment.",
-                      style: TextStyle(fontSize: 16),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_busy, size: 64, color: Colors.white24),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Aucune session prévue",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Pour l'instant, c'est le calme plat.",
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ],
                     ),
                   );
                 }

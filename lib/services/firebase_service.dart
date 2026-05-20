@@ -175,10 +175,14 @@ class FirebaseGameService {
   Future<void> toggleAvailability(
     String sessionId,
     String userId,
-    bool available,
+    bool? available,
   ) async {
     final ref = db.ref("sessions/$sessionId/availability/$userId");
-    await ref.set(available);
+    if (available == null) {
+      await ref.remove();
+    } else {
+      await ref.set(available);
+    }
   }
 
   Future<String> getUserName(String userId) async {

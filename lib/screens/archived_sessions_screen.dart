@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/firebase_service.dart';
 import '../widgets/status_badge.dart';
 
@@ -13,7 +14,25 @@ class ArchivedSessionsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Historique des sessions")),
       body: archivedAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ListView.builder(
+          itemCount: 6,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey.shade800,
+                highlightColor: Colors.grey.shade700,
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
         error: (error, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -35,7 +54,28 @@ class ArchivedSessionsScreen extends ConsumerWidget {
         ),
         data: (archivedSessions) {
           if (archivedSessions.isEmpty) {
-            return const Center(child: Text("Aucune session archivée."));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 64, color: Colors.white24),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Aucune archive",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Aucune session n'a encore été archivée.",
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ],
+              ),
+            );
           }
 
           return ListView.builder(
@@ -60,7 +100,7 @@ class ArchivedSessionsScreen extends ConsumerWidget {
                       ),
                       child: ListTile(
                         title: Text(
-                          session.date,
+                          session.displayDate,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
