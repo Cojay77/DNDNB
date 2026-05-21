@@ -65,15 +65,103 @@
     }
   </script>
 
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    body {
+      background-color: #121212;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    #splash {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      user-select: none;
+    }
+
+    #splash-icon {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      box-shadow: 0 0 0 0 rgba(196, 84, 23, 0.6);
+      animation: pulse-glow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(196, 84, 23, 0.55); }
+      50%  { transform: scale(1.05); box-shadow: 0 0 28px 8px rgba(196, 84, 23, 0.20); }
+      100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(196, 84, 23, 0.55); }
+    }
+
+    #splash-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #F5E6C8;
+      text-transform: uppercase;
+    }
+
+    #splash-subtitle {
+      font-size: 12px;
+      letter-spacing: 3px;
+      color: rgba(245, 230, 200, 0.4);
+      text-transform: uppercase;
+    }
+
+    #splash-divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #C45417, transparent);
+    }
+
+    #splash-spinner {
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid rgba(196, 84, 23, 0.18);
+      border-top-color: #C45417;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Hidden error text — only shows if Flutter fails to boot */
+    #loading-status {
+      display: none;
+      color: #ff6b6b;
+      font-size: 13px;
+      text-align: center;
+      max-width: 260px;
+    }
+  </style>
 
 </head>
 
+
 <body>
-  <div style="color: red; font-size: 18px;" id="loading-status">Chargement en cours...</div>
+
+  <div id="splash">
+    <img id="splash-icon" src="icons/Icon-192.png" alt="D&D&B" />
+    <div id="splash-title">D&D&B</div>
+    <div id="splash-divider"></div>
+    <div id="splash-subtitle">Dispo des Bros</div>
+    <div id="splash-spinner"></div>
+    <div id="loading-status"></div>
+  </div>
+
   <script>
-    window.onerror = function (message, source, lineno, colno, error) {
-      document.getElementById('loading-status').innerText = "Erreur détectée : " + message;
+    window.onerror = function (message) {
+      const el = document.getElementById('loading-status');
+      if (el) { el.style.display = 'block'; el.innerText = "Erreur : " + message; }
     };
   </script>
 
@@ -83,16 +171,16 @@
     });
   </script>
 
-  <script src="flutter_bootstrap.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
   <script>
-    window.addEventListener("load", function() {
-      _flutter.loader.loadEntrypoint({
-        onEntrypointLoaded: async function(engineInitializer) {
+    window.addEventListener("load", function () {
+      _flutter.loader.load({
+        onEntrypointLoaded: async function (engineInitializer) {
           const appRunner = await engineInitializer.initializeEngine({
             useColorEmoji: true,
           });
           await appRunner.runApp();
-        }
+        },
       });
     });
   </script>

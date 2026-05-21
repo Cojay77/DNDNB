@@ -17,7 +17,7 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
   Future<void> checkUpdateAvailable() async {
     final isOutdated = await hasNewVersion();
 
-    if (isOutdated) {
+    if (isOutdated && mounted) {
       setState(() {
         _showBanner = true;
       });
@@ -60,12 +60,15 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
                   children: const [
                     Icon(Icons.local_fire_department, color: Colors.white),
                     SizedBox(width: 12),
-                    Text(
-                      "🔥 Nouvelle version disponible — Appuyez pour recharger",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'UncialAntiqua',
-                        fontSize: 14,
+                    Flexible(
+                      child: Text(
+                        "Nouvelle version disponible — Appuyez pour recharger",
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'UncialAntiqua',
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],

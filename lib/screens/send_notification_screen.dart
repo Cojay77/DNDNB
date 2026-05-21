@@ -284,10 +284,12 @@ class _StatusChip extends StatelessWidget {
             color: color,
           ),
           const SizedBox(width: DndSpacing.sm),
-          Text(
-            status.text,
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.w600, fontSize: 13),
+          Flexible(
+            child: Text(
+              status.text,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
           ),
         ],
       ),
