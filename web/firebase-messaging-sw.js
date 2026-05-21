@@ -18,8 +18,15 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] Message reçu en arrière-plan :', payload);
 
-  const title = payload.notification?.title ?? 'D&D&B';
-  const body  = payload.notification?.body  ?? '';
+  // FCM automatically displays a notification if the payload contains a 'notification' object.
+  // If we also manually show it, the user will receive 2 duplicate notifications.
+  if (payload.notification) {
+    console.log('[SW] Notification payload found. FCM will display it automatically.');
+    return;
+  }
+
+  const title = payload.data?.title ?? 'D&D&B';
+  const body  = payload.data?.body  ?? '';
 
   self.registration.showNotification(title, {
     body,
