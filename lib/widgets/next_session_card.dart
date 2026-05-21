@@ -7,8 +7,7 @@ import '../utils/theme.dart';
 import 'session_card.dart';
 
 /// Hero card displayed on the home screen showing the next upcoming session.
-/// Shows the date, title, player count, the current user's availability status,
-/// and a quick-action button to go to sessions.
+/// Shows the date, title, player count, and the current user's availability status.
 class NextSessionCard extends ConsumerWidget {
   const NextSessionCard({super.key});
 
@@ -135,6 +134,44 @@ class NextSessionCard extends ConsumerWidget {
                             ),
                       ),
                     ],
+
+                    // MJ notes teaser (one line, truncated)
+                    if (next.notes.isNotEmpty) ...[
+                      const SizedBox(height: DndSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: DndSpacing.sm, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: DndColors.amber.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: DndColors.amber.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.sticky_note_2_outlined,
+                                size: 13, color: DndColors.amber),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                next.notes.length > 72
+                                    ? '${next.notes.substring(0, 72)}…'
+                                    : next.notes,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: DndColors.amber
+                                      .withValues(alpha: 0.85),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: DndSpacing.md),
 
                     // Stats row
@@ -155,18 +192,7 @@ class NextSessionCard extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: DndSpacing.md),
-
-                    // CTA button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/sessions'),
-                        icon: const Icon(Icons.casino, size: 18),
-                        label: const Text("Voir toutes les sessions"),
-                      ),
-                    ),
+                    const SizedBox(height: DndSpacing.sm),
                   ],
                 ),
               ),

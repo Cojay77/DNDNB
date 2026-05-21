@@ -83,7 +83,19 @@
     });
   </script>
 
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js"></script>
+  <script>
+    window.addEventListener("load", function() {
+      _flutter.loader.loadEntrypoint({
+        onEntrypointLoaded: async function(engineInitializer) {
+          const appRunner = await engineInitializer.initializeEngine({
+            useColorEmoji: true,
+          });
+          await appRunner.runApp();
+        }
+      });
+    });
+  </script>
   <script>
     let deferredPrompt;
 

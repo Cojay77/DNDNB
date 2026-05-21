@@ -10,14 +10,18 @@ import 'package:intl/date_symbol_data_local.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
+/// Global key so foreground FCM messages can show a SnackBar from anywhere.
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR', null);
 
+  // ── FCM token refresh ──────────────────────────────────────────────────────
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
     debugPrint("🔁 Nouveau token : $newToken");
-
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
@@ -33,9 +37,52 @@ void main() async {
     }
   });
 
+  // ── FCM foreground messages ────────────────────────────────────────────────
+  // When the app is open, FCM suppresses the OS notification.
+  // We show an in-app SnackBar instead so the user doesn't miss it.
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final title = message.notification?.title ?? 'D&D&B';
+    final body  = message.notification?.body;
+    if (body == null || body.isEmpty) return;
+
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Row(
+          children: [
+            const Icon(Icons.notifications_active_outlined,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(body,
+                      style: const TextStyle(fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  });
+
   runApp(
     ProviderScope(
-      child: DndApp(routeObserver: routeObserver),
+      child: DndApp(
+        routeObserver: routeObserver,
+        scaffoldMessengerKey: scaffoldMessengerKey,
+      ),
     ),
   );
 }

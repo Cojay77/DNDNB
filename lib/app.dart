@@ -14,7 +14,13 @@ import 'services/auth_service.dart';
 
 class DndApp extends ConsumerWidget {
   final RouteObserver<PageRoute> routeObserver;
-  const DndApp({super.key, required this.routeObserver});
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+
+  const DndApp({
+    super.key,
+    required this.routeObserver,
+    required this.scaffoldMessengerKey,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,6 +28,7 @@ class DndApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'D&D&B',
+      scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorObservers: [routeObserver],
       themeMode: ThemeMode.dark,
       darkTheme: DndTheme.dark,

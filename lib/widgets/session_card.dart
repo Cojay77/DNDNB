@@ -142,44 +142,36 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                     style: const TextStyle(
                         fontSize: 13, fontStyle: FontStyle.italic),
                   ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        "$playerCount joueur${playerCount > 1 ? 's' : ''} dispo",
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: playerCount > 0
-                              ? Colors.green.shade300
-                              : Colors.grey,
-                        ),
+                if (countdown.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: DndColors.fire.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color: DndColors.fire.withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      countdown,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: DndColors.fire,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (countdown.isNotEmpty) ...[
-                      const SizedBox(width: DndSpacing.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: DndColors.fire.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color:
-                                  DndColors.fire.withValues(alpha: 0.35)),
-                        ),
-                        child: Text(
-                          countdown,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: DndColors.fire,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  "$playerCount joueur${playerCount > 1 ? 's' : ''} dispo",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: playerCount > 0
+                        ? Colors.green.shade300
+                        : Colors.grey,
+                  ),
                 ),
               ],
             ),
