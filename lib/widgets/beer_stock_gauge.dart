@@ -94,7 +94,7 @@ class BeerStockGauge extends ConsumerWidget {
                     Container(
                       height: 22,
                       width: double.infinity,
-                      color: Colors.grey.shade800,
+                      color: DndColors.parchmentDark,
                     ),
                     // Contribution overlay (lighter tone)
                     if (contributions > 0)
@@ -167,7 +167,7 @@ class BeerStockGauge extends ConsumerWidget {
                   _stockLabel(stock),
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade400,
+                    color: DndColors.textSecondary,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -254,7 +254,7 @@ class _BeerStockEditSheetState extends State<_BeerStockEditSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade600,
+              color: DndColors.textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -278,7 +278,7 @@ class _BeerStockEditSheetState extends State<_BeerStockEditSheet> {
           Text(
             "${_value.toInt()}",
             style: TextStyle(
-              fontFamily: 'UncialAntiqua',
+              fontFamily: 'Cinzel',
               fontSize: 64,
               fontWeight: FontWeight.bold,
               color: color,

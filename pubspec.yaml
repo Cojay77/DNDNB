@@ -78,6 +78,12 @@ flutter:
     - family: UncialAntiqua
       fonts:
         - asset: assets/fonts/UncialAntiqua-Regular.ttf
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel.ttf
+    - family: EBGaramond
+      fonts:
+        - asset: assets/fonts/EBGaramond.ttf
 
   assets:
     - assets/logo.png

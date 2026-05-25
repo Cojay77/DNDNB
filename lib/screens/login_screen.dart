@@ -121,8 +121,7 @@ class _LoginScreenState extends State<LoginScreen>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF1A0000), Colors.black],
-                stops: [0.0, 0.55],
+                colors: [DndColors.parchmentLight, DndColors.parchment],
               ),
             ),
           ),
@@ -140,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      DndColors.fire.withValues(alpha: 0.35),
+                      DndColors.fire.withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                   ),
@@ -161,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     "D&D&B",
                     style: TextStyle(
-                      fontFamily: 'UncialAntiqua',
+                      fontFamily: 'Cinzel',
                       fontSize: 52,
                       fontWeight: FontWeight.bold,
                       color: DndColors.fire,
@@ -177,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     "Dispo des Bros",
                     style: TextStyle(
-                      fontFamily: 'UncialAntiqua',
+                      fontFamily: 'Cinzel',
                       fontSize: 14,
                       color: DndColors.onSurfaceMuted,
                       letterSpacing: 2,
@@ -498,12 +497,12 @@ class _IosHint extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          Icon(Icons.ios_share, color: Colors.white70, size: 22),
+          Icon(Icons.ios_share, color: DndColors.textSecondary, size: 22),
           SizedBox(width: DndSpacing.md),
           Expanded(
             child: Text(
               "Pour installer sur iOS :\nBouton partage ↑ → \"Ajouter à l'écran d'accueil\"",
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: TextStyle(color: DndColors.textSecondary, fontSize: 12),
             ),
           ),
         ],

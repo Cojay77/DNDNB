@@ -287,7 +287,7 @@ class _NextSessionSkeleton extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey.shade800,
+        color: DndColors.parchmentDark,
         borderRadius: BorderRadius.circular(6),
       ),
     );
@@ -304,12 +304,12 @@ class _NoSessionCard extends StatelessWidget {
         padding: const EdgeInsets.all(DndSpacing.lg),
         child: Column(
           children: [
-            Icon(Icons.event_busy, size: 40, color: Colors.grey.shade600),
+            Icon(Icons.event_busy, size: 40, color: DndColors.textSecondary),
             const SizedBox(height: DndSpacing.sm),
             Text(
               "Aucune session à venir.",
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey.shade500,
+                    color: DndColors.textMuted,
                   ),
             ),
           ],

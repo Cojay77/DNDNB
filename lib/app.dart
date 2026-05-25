@@ -30,8 +30,9 @@ class DndApp extends ConsumerWidget {
       title: 'D&D&B',
       scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorObservers: [routeObserver],
-      themeMode: ThemeMode.dark,
-      darkTheme: DndTheme.dark,
+      themeMode: ThemeMode.light,
+      theme: DndTheme.light,
+      darkTheme: DndTheme.light,
       locale: const Locale('fr', 'FR'),
       supportedLocales: const [Locale('fr', 'FR')],
       localizationsDelegates: const [

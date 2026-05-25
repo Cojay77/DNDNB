@@ -56,7 +56,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: DndColors.parchment,
       body: Stack(
         children: [
           // Fire glow background
@@ -96,9 +96,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: DndColors.surface,
+                        color: DndColors.parchmentLight,
                         border: Border.all(
-                          color: DndColors.fire.withValues(alpha: 0.5),
+                          color: DndColors.fire.withValues(alpha: 0.3),
                           width: 2,
                         ),
                         boxShadow: [
@@ -120,7 +120,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     Text(
                       "D&D&B",
                       style: TextStyle(
-                        fontFamily: 'UncialAntiqua',
+                        fontFamily: 'Cinzel',
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
                         color: DndColors.fire,
@@ -136,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     Text(
                       "Dispo des Bros",
                       style: TextStyle(
-                        fontFamily: 'UncialAntiqua',
+                        fontFamily: 'Cinzel',
                         fontSize: 13,
                         color: DndColors.onSurfaceMuted,
                         letterSpacing: 3,

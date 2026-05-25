@@ -5,24 +5,39 @@ import 'package:flutter/material.dart';
 class DndColors {
   DndColors._();
 
-  static const fire = Color(0xFFFF4500);
-  static const blood = Color(0xFF8B0000);
-  static const ember = Color(0xFFFF7043);
-  static const gold = Color(0xFFFFC107);
-  static const amber = Color(0xFFFFB300);
+  // D&D Crimson Red
+  static const darkRed = Color(0xFF7A2021);
+  static const fire = darkRed;
+  static const blood = Color(0xFF58180D);
+  static const ember = Color(0xFF9E2C2D);
+  
+  // D&D Gold accents
+  static const gold = Color(0xFFC5A059);
+  static const amber = Color(0xFFB48A3C);
 
-  static const surface = Color(0xFF1A1A1A);
-  static const surfaceVariant = Color(0xFF242424);
-  static const card = Color(0xFF1E1E1E);
-  static const cardElevated = Color(0xFF2A2A2A);
+  // Parchment tones
+  static const parchment = Color(0xFFF4ECE1);
+  static const parchmentDark = Color(0xFFE8DDCB);
+  static const parchmentLight = Color(0xFFFAF6EE);
 
+  static const surface = parchment;
+  static const surfaceVariant = parchmentDark;
+  static const card = parchmentLight;
+  static const cardElevated = Color(0xFFFFFDF9);
+
+  // Text colors
+  static const textPrimary = Color(0xFF2C1A1B); // Dark red-brown-black for top legibility
+  static const textSecondary = Color(0xFF5C4C42); // Warm gray-brown
+  static const textMuted = Color(0xFF8C7C72); // Disabled gray-brown
+  
   static const onPrimary = Colors.white;
-  static const onSurface = Color(0xFFE0E0E0);
-  static const onSurfaceMuted = Color(0xFF9E9E9E);
+  static const onSurface = textPrimary;
+  static const onSurfaceMuted = textSecondary;
 
-  static const beerGreen = Color(0xFF4CAF50);
-  static const beerOrange = Color(0xFFF57C00);
-  static const beerRed = Color(0xFFD32F2F);
+  // Status/utility colors (adjusted for visibility on light parchment)
+  static const beerGreen = Color(0xFF2E7D32);
+  static const beerOrange = Color(0xFFE65100);
+  static const beerRed = Color(0xFFC62828);
 }
 
 // ─── Theme Data ───────────────────────────────────────────────────────────────
@@ -30,129 +45,168 @@ class DndColors {
 class DndTheme {
   DndTheme._();
 
-  static ThemeData get dark {
+  static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      fontFamily: 'UncialAntiqua',
-      colorScheme: const ColorScheme.dark(
-        primary: DndColors.fire,
-        secondary: DndColors.blood,
-        surface: DndColors.surface,
-        surfaceContainerHighest: DndColors.surfaceVariant,
+      brightness: Brightness.light,
+      fontFamily: 'EBGaramond',
+      colorScheme: const ColorScheme.light(
+        primary: DndColors.darkRed,
+        secondary: DndColors.gold,
+        surface: DndColors.parchment,
+        surfaceContainerHighest: DndColors.parchmentDark,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: DndColors.onSurface,
+        onSurface: DndColors.textPrimary,
+        onSurfaceVariant: DndColors.textSecondary,
       ),
-      scaffoldBackgroundColor: Colors.black,
+      scaffoldBackgroundColor: DndColors.parchment,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.black,
+        backgroundColor: DndColors.darkRed,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 2,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontFamily: 'UncialAntiqua',
+          fontFamily: 'Cinzel',
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          letterSpacing: 1.1,
         ),
       ),
       cardTheme: CardThemeData(
-        color: DndColors.card,
-        elevation: 3,
-        shadowColor: DndColors.fire.withValues(alpha: 0.15),
+        color: DndColors.parchmentLight,
+        elevation: 2,
+        shadowColor: DndColors.darkRed.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: DndColors.parchmentDark, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: DndColors.fire,
+          backgroundColor: DndColors.darkRed,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: const TextStyle(
+            fontFamily: 'Cinzel',
             fontWeight: FontWeight.bold,
             fontSize: 14,
+            letterSpacing: 0.5,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: DndColors.ember,
+          foregroundColor: DndColors.darkRed,
+          textStyle: const TextStyle(
+            fontFamily: 'Cinzel',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: DndColors.darkRed,
+          side: const BorderSide(color: DndColors.darkRed, width: 1.2),
+          textStyle: const TextStyle(
+            fontFamily: 'Cinzel',
+            fontWeight: FontWeight.bold,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: DndColors.surfaceVariant,
+        fillColor: DndColors.parchmentLight,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: DndColors.parchmentDark, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: DndColors.parchmentDark, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DndColors.fire, width: 1.5),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: DndColors.darkRed, width: 1.8),
         ),
-        labelStyle: const TextStyle(color: DndColors.onSurfaceMuted),
+        labelStyle: const TextStyle(color: DndColors.textSecondary, fontFamily: 'EBGaramond'),
+        hintStyle: const TextStyle(color: DndColors.textMuted, fontFamily: 'EBGaramond'),
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFF333333),
+        color: DndColors.parchmentDark,
         space: 1,
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: DndColors.fire,
+        backgroundColor: DndColors.darkRed,
         foregroundColor: Colors.white,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: DndColors.cardElevated,
-        contentTextStyle: const TextStyle(color: DndColors.onSurface),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: DndColors.textPrimary,
+        contentTextStyle: const TextStyle(color: DndColors.parchmentLight, fontFamily: 'EBGaramond'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       tabBarTheme: const TabBarThemeData(
-        labelColor: Colors.white,
-        unselectedLabelColor: DndColors.onSurfaceMuted,
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        unselectedLabelStyle: TextStyle(fontSize: 14),
+        labelColor: DndColors.darkRed,
+        unselectedLabelColor: DndColors.textSecondary,
+        indicatorColor: DndColors.darkRed,
+        dividerColor: DndColors.parchmentDark,
+        labelStyle: TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.bold, fontSize: 13),
+        unselectedLabelStyle: TextStyle(fontFamily: 'Cinzel', fontSize: 13),
       ),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
-          fontFamily: 'UncialAntiqua',
+          fontFamily: 'Cinzel',
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: DndColors.onSurface,
+          color: DndColors.darkRed,
         ),
         headlineMedium: TextStyle(
-          fontFamily: 'UncialAntiqua',
+          fontFamily: 'Cinzel',
           fontSize: 22,
           fontWeight: FontWeight.bold,
-          color: DndColors.onSurface,
+          color: DndColors.darkRed,
         ),
         titleLarge: TextStyle(
-          fontFamily: 'UncialAntiqua',
+          fontFamily: 'Cinzel',
           fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: DndColors.onSurface,
+          fontWeight: FontWeight.bold,
+          color: DndColors.darkRed,
         ),
         titleMedium: TextStyle(
+          fontFamily: 'Cinzel',
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: DndColors.onSurface,
+          color: DndColors.darkRed,
         ),
-        bodyLarge: TextStyle(fontSize: 15, color: DndColors.onSurface),
-        bodyMedium: TextStyle(fontSize: 13, color: DndColors.onSurfaceMuted),
+        bodyLarge: TextStyle(
+          fontFamily: 'EBGaramond',
+          fontSize: 16,
+          color: DndColors.textPrimary,
+        ),
+        bodyMedium: TextStyle(
+          fontFamily: 'EBGaramond',
+          fontSize: 14,
+          color: DndColors.textSecondary,
+        ),
         labelLarge: TextStyle(
+          fontFamily: 'Cinzel',
           fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: DndColors.onSurface,
+          color: DndColors.darkRed,
         ),
       ),
     );
   }
+
+  static ThemeData get dark => light;
 }
 
 // ─── Spacing Tokens ───────────────────────────────────────────────────────────

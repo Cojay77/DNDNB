@@ -369,8 +369,4 @@ class _SessionAdminTile extends StatelessWidget {
       ),
     );
   }
-
-  Color _statusColor(String status) {
-    return StatusBadge.colorFor(status);
-  }
 }

@@ -28,11 +28,11 @@ class _BottomBarState extends State<BottomBar> {
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: DndColors.parchmentDark,
         // Fire gradient top border
         border: Border(
           top: BorderSide(
-            color: DndColors.fire.withValues(alpha: 0.45),
+            color: DndColors.fire.withValues(alpha: 0.35),
             width: 1.5,
           ),
         ),
@@ -53,8 +53,10 @@ class _BottomBarState extends State<BottomBar> {
           Text(
             _version.isEmpty ? "D&D&B" : "v$_version",
             style: const TextStyle(
+              fontFamily: 'Cinzel',
+              fontWeight: FontWeight.bold,
               fontSize: 10,
-              color: DndColors.onSurfaceMuted,
+              color: DndColors.textSecondary,
               letterSpacing: 0.5,
             ),
           ),

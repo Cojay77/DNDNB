@@ -212,7 +212,7 @@ class _Avatar extends StatelessWidget {
                   child: Text(
                     initials,
                     style: TextStyle(
-                      fontFamily: 'UncialAntiqua',
+                      fontFamily: 'Cinzel',
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: DndColors.fire,

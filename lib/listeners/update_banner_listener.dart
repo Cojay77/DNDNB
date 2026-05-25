@@ -66,7 +66,7 @@ class _UpdateBannerListenerState extends State<UpdateBannerListener> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white,
-                          fontFamily: 'UncialAntiqua',
+                          fontFamily: 'Cinzel',
                           fontSize: 14,
                         ),
                       ),
