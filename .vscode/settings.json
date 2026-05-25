@@ -1,0 +1,16 @@
+{
+  "C_Cpp.files.exclude": {
+    "**/linux/**": true,
+    "**/macos/**": true,
+    "**/ios/**": true
+  },
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/windows/flutter/ephemeral/cpp_client_wrapper/include",
+    "${workspaceFolder}/windows/flutter/ephemeral"
+  ],
+  "files.exclude": {
+    "**/linux/**": true,
+    "**/macos/**": true,
+    "**/ios/**": true
+  }
+}
