@@ -10,7 +10,16 @@ import 'package:intl/date_symbol_data_local.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-/// Global key so foreground FCM messages can show a SnackBar from anywhere.
+  // ── FCM background messages ────────────────────────────────────────────────
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint("Handling a background message: ${message.messageId}");
+}
+
+// ── Global key so foreground FCM messages can show a SnackBar from anywhere.
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
@@ -18,6 +27,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR', null);
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // ── FCM token refresh ──────────────────────────────────────────────────────
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
@@ -36,6 +47,19 @@ void main() async {
       debugPrint("ℹ️ Aucun utilisateur connecté, token ignoré.");
     }
   });
+
+  // ── Handle notification click when app is in background ────────────────────
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    debugPrint("Application ouverte via notification : ${message.notification?.title}");
+    // We could navigate here if needed
+  });
+
+  // ── Handle notification click when app is terminated ───────────────────────
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    debugPrint("Application lancée via notification : ${initialMessage.notification?.title}");
+    // We could navigate here if needed
+  }
 
   // ── FCM foreground messages ────────────────────────────────────────────────
   // When the app is open, FCM suppresses the OS notification.
