@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../models/game_session.dart';
 
 /// Provider for the FirebaseGameService singleton
@@ -64,15 +65,20 @@ class UsernameCacheNotifier extends StateNotifier<Map<String, String>> {
       return state[userId]!;
     }
 
-    final snapshot = await FirebaseDatabase.instance
-        .ref("users/$userId/displayName")
-        .get();
+    try {
+      final snapshot = await FirebaseDatabase.instance
+          .ref("users/$userId/displayName")
+          .get();
 
-    final name =
-        snapshot.exists ? snapshot.value.toString() : "Utilisateur inconnu";
+      final name =
+          snapshot.exists ? snapshot.value.toString() : "Utilisateur inconnu";
 
-    state = {...state, userId: name};
-    return name;
+      state = {...state, userId: name};
+      return name;
+    } catch (e) {
+      debugPrint("Error fetching username for $userId: $e");
+      return "Utilisateur inconnu";
+    }
   }
 }
 
@@ -182,12 +188,17 @@ class FirebaseGameService {
   }
 
   Future<String> getUserName(String userId) async {
-    final ref = db.ref("users/$userId/displayName");
-    final snap = await ref.get();
+    try {
+      final ref = db.ref("users/$userId/displayName");
+      final snap = await ref.get();
 
-    if (snap.exists) {
-      return snap.value as String;
-    } else {
+      if (snap.exists) {
+        return snap.value as String;
+      } else {
+        return "utilisateur inconnu";
+      }
+    } catch (e) {
+      debugPrint("Error fetching username for $userId: $e");
       return "utilisateur inconnu";
     }
   }

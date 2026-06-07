@@ -4,6 +4,7 @@ import 'package:dndnb/utils/share_ics.dart';
 import 'package:dndnb/utils/theme.dart';
 import 'package:dndnb/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/game_session.dart';
 import '../services/firebase_service.dart';
@@ -383,7 +384,7 @@ class _AvailabilityListState extends State<AvailabilityList> {
   @override
   void didUpdateWidget(covariant AvailabilityList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.session.availability != widget.session.availability) {
+    if (!mapEquals(oldWidget.session.availability, widget.session.availability)) {
       _resolve();
     }
   }
