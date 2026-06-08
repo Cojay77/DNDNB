@@ -30,8 +30,16 @@ class NextSessionCard extends ConsumerWidget {
 
         return Card(
           clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
+          child: InkWell(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/sessions',
+                arguments: next.id,
+              );
+            },
+            child: Stack(
+              children: [
               // Gradient header
               Container(
                 height: 6,

@@ -36,12 +36,14 @@ class SessionCard extends ConsumerStatefulWidget {
   final String userId;
   /// When true, an edit button for MJ notes is shown
   final bool isAdmin;
+  final bool isHighlighted;
 
   const SessionCard({
     super.key,
     required this.session,
     required this.userId,
     this.isAdmin = false,
+    this.isHighlighted = false,
   });
 
   @override
@@ -99,133 +101,156 @@ class _SessionCardState extends ConsumerState<SessionCard> {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Card(
-          margin: const EdgeInsets.symmetric(
-              horizontal: DndSpacing.md, vertical: 10),
-          child: ExpansionTile(
-            leading: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.calendar_month_outlined),
-                if (session.notes.isNotEmpty)
-                  Positioned(
-                    right: -3,
-                    top: -3,
-                    child: Container(
-                      width: 9,
-                      height: 9,
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: widget.isHighlighted ? 1.0 : 0.0, end: 0.0),
+          duration: const Duration(seconds: 3),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Container(
+              margin: const EdgeInsets.symmetric(
+                  horizontal: DndSpacing.md, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: value > 0.01
+                    ? [
+                        BoxShadow(
+                          color: DndColors.fire.withValues(alpha: 0.6 * value),
+                          blurRadius: 20 * value,
+                          spreadRadius: 4 * value,
+                        )
+                      ]
+                    : null,
+              ),
+              child: child,
+            );
+          },
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: ExpansionTile(
+              leading: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.calendar_month_outlined),
+                  if (session.notes.isNotEmpty)
+                    Positioned(
+                      right: -3,
+                      top: -3,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: DndColors.amber,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: DndColors.card, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              tilePadding: const EdgeInsets.symmetric(
+                  horizontal: DndSpacing.md, vertical: 10),
+              title: Text(
+                _shortDate(session.date),
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (session.title.isNotEmpty)
+                    Text(
+                      session.title,
+                      style: const TextStyle(
+                          fontSize: 13, fontStyle: FontStyle.italic),
+                    ),
+                  if (countdown.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: DndColors.amber,
-                        shape: BoxShape.circle,
+                        color: DndColors.fire.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                            color: DndColors.card, width: 1.5),
+                            color: DndColors.fire.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        countdown,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: DndColors.fire,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            tilePadding: const EdgeInsets.symmetric(
-                horizontal: DndSpacing.md, vertical: 10),
-            title: Text(
-              _shortDate(session.date),
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (session.title.isNotEmpty)
-                  Text(
-                    session.title,
-                    style: const TextStyle(
-                        fontSize: 13, fontStyle: FontStyle.italic),
-                  ),
-                if (countdown.isNotEmpty) ...[
+                  ],
                   const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: DndColors.fire.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: DndColors.fire.withValues(alpha: 0.35)),
-                    ),
-                    child: Text(
-                      countdown,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: DndColors.fire,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  Text(
+                    "$playerCount joueur${playerCount > 1 ? 's' : ''} dispo",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: playerCount > 0
+                          ? Colors.green.shade300
+                          : Colors.grey,
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
-                Text(
-                  "$playerCount joueur${playerCount > 1 ? 's' : ''} dispo",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: playerCount > 0
-                        ? Colors.green.shade300
-                        : Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-            trailing: _AvailabilityDropdown(
-              value: currentAvailability,
-              onChanged: (value) async {
-                if (value == null) return;
-                await gameService.toggleAvailability(
-                    session.id, userId, value);
-              },
-            ),
-            children: [
-              const Divider(height: 1, indent: 16, endIndent: 16),
-
-              // ICS export action row
-              _IcsExportRow(onExport: _exportIcs),
-
-              _BeerInputRow(
-                controller: _beerController,
-                onConfirm: () async {
-                  final amount =
-                      int.tryParse(_beerController.text.trim());
-                  if (amount == null || amount < 0) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Nombre invalide")),
-                      );
-                    }
-                    return;
-                  }
-                  await gameService.setBeerContribution(
-                      session.id, userId, amount);
-                  _beerController.clear();
+              ),
+              trailing: _AvailabilityDropdown(
+                value: currentAvailability,
+                onChanged: (value) async {
+                  if (value == null) return;
+                  await gameService.toggleAvailability(
+                      session.id, userId, value);
                 },
               ),
-              AvailabilityList(
-                session: session,
-                usernameCache: usernameCache,
-              ),
-              BeerContributionsList(
-                session: session,
-                gameService: gameService,
-              ),
-              // MJ Notes
-              if (session.notes.isNotEmpty || widget.isAdmin)
-                _NotesSection(
+              children: [
+                const Divider(height: 1, indent: 16, endIndent: 16),
+
+                // ICS export action row
+                _IcsExportRow(onExport: _exportIcs),
+
+                _BeerInputRow(
+                  controller: _beerController,
+                  onConfirm: () async {
+                    final amount =
+                        int.tryParse(_beerController.text.trim());
+                    if (amount == null || amount < 0) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Nombre invalide")),
+                        );
+                      }
+                      return;
+                    }
+                    await gameService.setBeerContribution(
+                        session.id, userId, amount);
+                    _beerController.clear();
+                  },
+                ),
+                AvailabilityList(
+                  session: session,
+                  usernameCache: usernameCache,
+                ),
+                BeerContributionsList(
                   session: session,
                   gameService: gameService,
-                  isAdmin: widget.isAdmin,
                 ),
-              const SizedBox(height: DndSpacing.sm),
-            ],
+                // MJ Notes
+                if (session.notes.isNotEmpty || widget.isAdmin)
+                  _NotesSection(
+                    session: session,
+                    gameService: gameService,
+                    isAdmin: widget.isAdmin,
+                  ),
+                const SizedBox(height: DndSpacing.sm),
+              ],
+            ),
           ),
         ),
 

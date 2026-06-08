@@ -13,6 +13,7 @@ class GameSessionsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final highlightedSessionId = ModalRoute.of(context)?.settings.arguments as String?;
     final sessionsAsync = ref.watch(sessionsStreamProvider);
     final userId = FirebaseAuth.instance.currentUser!.uid;
     final isAdmin = ref.watch(isAdminProvider).value ?? false;
@@ -54,6 +55,7 @@ class GameSessionsScreen extends ConsumerWidget {
                         session: sessions[index],
                         userId: userId,
                         isAdmin: isAdmin,
+                        isHighlighted: sessions[index].id == highlightedSessionId,
                       ),
                     ),
                   ),
