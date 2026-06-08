@@ -226,15 +226,21 @@ class _SessionCardState extends ConsumerState<SessionCard> with SingleTickerProv
                           : Colors.grey,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Ma présence :",
+                    style: TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  _AvailabilitySelector(
+                    value: currentAvailability,
+                    onChanged: (value) async {
+                      await gameService.toggleAvailability(
+                          session.id, userId, value);
+                    },
+                  ),
                 ],
-              ),
-              trailing: _AvailabilityDropdown(
-                value: currentAvailability,
-                onChanged: (value) async {
-                  if (value == null) return;
-                  await gameService.toggleAvailability(
-                      session.id, userId, value);
-                },
               ),
               children: [
                 const Divider(height: 1, indent: 16, endIndent: 16),
@@ -339,27 +345,53 @@ class _IcsExportRow extends StatelessWidget {
   }
 }
 
-// ─── AvailabilityDropdown ─────────────────────────────────────────────────────
+// ─── AvailabilitySelector ─────────────────────────────────────────────────────
 
-class _AvailabilityDropdown extends StatelessWidget {
+class _AvailabilitySelector extends StatelessWidget {
   final bool? value;
   final ValueChanged<bool?> onChanged;
 
-  const _AvailabilityDropdown({required this.value, required this.onChanged});
+  const _AvailabilitySelector({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButton<bool?>(
-      value: value,
-      icon: const Icon(Icons.arrow_drop_down),
-      underline: const SizedBox.shrink(),
-      isDense: true,
-      items: const [
-        DropdownMenuItem(value: true, child: Text("✅ Présent")),
-        DropdownMenuItem(value: false, child: Text("❌ Absent")),
-        DropdownMenuItem(value: null, child: Text("❓ Non répondu")),
-      ],
-      onChanged: onChanged,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildOption("✅ Présent", true, Colors.green.shade400),
+          _buildOption("❌ Absent", false, Colors.red.shade400),
+          _buildOption("❓", null, Colors.grey.shade400),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOption(String text, bool? optionValue, Color activeColor) {
+    final isSelected = value == optionValue;
+    return InkWell(
+      onTap: () => onChanged(optionValue),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? activeColor : Colors.grey,
+          ),
+        ),
+      ),
     );
   }
 }
