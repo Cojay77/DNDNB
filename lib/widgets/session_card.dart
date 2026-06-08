@@ -50,12 +50,41 @@ class SessionCard extends ConsumerStatefulWidget {
   ConsumerState<SessionCard> createState() => _SessionCardState();
 }
 
-class _SessionCardState extends ConsumerState<SessionCard> {
+class _SessionCardState extends ConsumerState<SessionCard> with SingleTickerProviderStateMixin {
   final TextEditingController _beerController = TextEditingController();
+  AnimationController? _highlightController;
+  Animation<double>? _highlightAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isHighlighted) {
+      _highlightController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 900),
+      );
+      _highlightAnimation = CurvedAnimation(
+        parent: _highlightController!,
+        curve: Curves.easeInOut,
+      );
+
+      _playHighlight();
+    }
+  }
+
+  Future<void> _playHighlight() async {
+    for (int i = 0; i < 3; i++) {
+      if (!mounted) return;
+      await _highlightController!.forward();
+      if (!mounted) return;
+      await _highlightController!.reverse();
+    }
+  }
 
   @override
   void dispose() {
     _beerController.dispose();
+    _highlightController?.dispose();
     super.dispose();
   }
 
@@ -101,11 +130,10 @@ class _SessionCardState extends ConsumerState<SessionCard> {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: widget.isHighlighted ? 1.0 : 0.0, end: 0.0),
-          duration: const Duration(seconds: 3),
-          curve: Curves.easeOutCubic,
-          builder: (context, value, child) {
+        AnimatedBuilder(
+          animation: _highlightAnimation ?? const AlwaysStoppedAnimation<double>(0.0),
+          builder: (context, child) {
+            final value = _highlightAnimation?.value ?? 0.0;
             return Container(
               margin: const EdgeInsets.symmetric(
                   horizontal: DndSpacing.md, vertical: 10),
