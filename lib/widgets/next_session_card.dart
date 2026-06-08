@@ -206,6 +206,7 @@ class NextSessionCard extends ConsumerWidget {
               ),
             ],
           ),
+         ),
         );
       },
     );
